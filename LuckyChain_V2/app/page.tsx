@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { WalletConnect } from "@/components/wallet-connect"
 import { LotteryCard } from "@/components/lottery-card"
 import { CreateLotteryDialog } from "@/components/create-lottery-dialog"
@@ -8,6 +9,7 @@ import { PixelatedCash } from "@/components/pixelated-cash"
 import type { LotteryData } from "@/lib/web3"
 import { Sparkles, Trophy, Shield, Zap } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import { useWeb3 } from "./context/Web3Context"
 import useContract, { type ContractLottery } from "./services/contract"
 
@@ -33,17 +35,36 @@ export default function Home() {
 
   useEffect(() => {
     handleLoadLotteries()
+    
+    // Refresh lotteries periodically to catch expired ones
+    const interval = setInterval(() => {
+      handleLoadLotteries()
+    }, 30000) // Refresh every 30 seconds
+    
+    return () => clearInterval(interval)
   }, [])
 
-  const activeLotteries = lotteries.filter((lottery) => lottery.isActive)
-  const endedLotteries = lotteries.filter((lottery) => !lottery.isActive)
+  // Filter lotteries - check if time has expired even if not completed
+  const activeLotteries = lotteries.filter((lottery) => {
+    if (!lottery.isActive || lottery.isCompleted) return false
+    const endTimestamp = Number(lottery.endTime ?? 0)
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    return endTimestamp === 0 || endTimestamp > nowSeconds
+  })
+  
+  const endedLotteries = lotteries.filter((lottery) => {
+    if (!lottery.isActive || lottery.isCompleted) return true
+    const endTimestamp = Number(lottery.endTime ?? 0)
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    return endTimestamp > 0 && endTimestamp <= nowSeconds
+  })
   const createdLotteries = address
-    ? lotteries.filter((lottery) => lottery.creator.toLowerCase() === address.toLowerCase())
+    ? lotteries.filter((lottery) => lottery.creator?.toLowerCase() === address.toLowerCase())
     : []
   const enteredLotteries = address
     ? lotteries.filter((lottery) => {
-        const participants = (lottery as any).participants || []
-        return participants.some((p: string) => p.toLowerCase() === address.toLowerCase())
+        const participants = lottery.participants || []
+        return participants.some((p: string) => p?.toLowerCase() === address.toLowerCase())
       })
     : []
 
@@ -71,13 +92,31 @@ export default function Home() {
       <section className="relative">
         <div className="relative container mx-auto px-4 py-20">
           <nav className="flex items-center justify-between mb-20">
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/50 relative z-10">
                 <Trophy className="h-8 w-8 text-white drop-shadow-lg" />
               </div>
               <span className="text-3xl font-bold tracking-tight text-white relative z-10">LuckyChain</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/fyi">
+                <Button
+                  variant="ghost"
+                  className="text-white hover:text-white hover:bg-white/10 hidden md:flex"
+                >
+                  How It Works
+                </Button>
+              </Link>
+              <Link href="/developers">
+                <Button
+                  variant="ghost"
+                  className="text-white hover:text-white hover:bg-white/10 hidden md:flex"
+                >
+                  Developers
+                </Button>
+              </Link>
+              <WalletConnect />
             </div>
-            <WalletConnect />
           </nav>
 
           <div className="max-w-4xl mx-auto text-center space-y-8">

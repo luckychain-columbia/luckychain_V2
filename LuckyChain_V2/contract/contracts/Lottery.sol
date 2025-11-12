@@ -30,6 +30,12 @@ contract Lottery {
     uint256 public nextLotteryId;
 
     uint16 public constant MAX_CREATOR_PCT = 10_000; // 100%
+    
+    // Finalization reward: 0.001 ETH or 0.1% of pool (whichever is higher, capped at 0.01 ETH)
+    // This incentivizes anyone to finalize expired lotteries by covering gas costs
+    uint256 public constant MIN_FINALIZATION_REWARD = 0.001 ether; // 0.001 ETH
+    uint256 public constant MAX_FINALIZATION_REWARD = 0.01 ether; // 0.01 ETH
+    uint16 public constant FINALIZATION_REWARD_BPS = 10; // 0.1% of pool (10 basis points)
 
     event LotteryCreated(
         uint256 indexed lotteryId,
@@ -54,7 +60,9 @@ contract Lottery {
         uint256 indexed lotteryId,
         address[] winners,
         uint256 prizePerWinner,
-        uint256 creatorReward
+        uint256 creatorReward,
+        uint256 finalizationReward,
+        address finalizer
     );
 
     modifier onlyCreator(uint256 _lotteryId) {
@@ -158,12 +166,35 @@ contract Lottery {
         emit TicketsPurchased(_lotteryId, msg.sender, ticketNumbers, msg.value);
     }
 
-    function selectWinner(uint256 _lotteryId) external onlyCreator(_lotteryId) {
-        _finalizeLottery(_lotteryId);
+    // Anyone can finalize an expired lottery, but only creator can finalize early when max tickets reached
+    function finalizeLottery(uint256 _lotteryId) external {
+        LotteryInfo storage lottery = lotteries[_lotteryId];
+        bool isExpired = block.timestamp >= lottery.endTime;
+        
+        // If lottery has expired, anyone can finalize (with reward from pool)
+        if (isExpired) {
+            _finalizeLottery(_lotteryId, true); // true = expired, pay reward
+            return;
+        }
+        
+        // If max tickets reached but not expired, only creator can finalize early (no reward)
+        if (lottery.maxTickets > 0 && 
+            lotteryParticipants[_lotteryId].length >= lottery.maxTickets) {
+            require(lottery.creator == msg.sender, "Only creator can finalize early");
+            _finalizeLottery(_lotteryId, false); // false = early finalization, no reward
+            return;
+        }
+        
+        revert("Lottery ongoing");
     }
 
-    function endLottery(uint256 _lotteryId) external onlyCreator(_lotteryId) {
-        _finalizeLottery(_lotteryId);
+    // Legacy functions for backwards compatibility
+    function selectWinner(uint256 _lotteryId) external {
+        finalizeLottery(_lotteryId);
+    }
+
+    function endLottery(uint256 _lotteryId) external {
+        finalizeLottery(_lotteryId);
     }
 
     function getLotteryInfo(uint256 _lotteryId)
@@ -235,18 +266,14 @@ contract Lottery {
         return nextLotteryId;
     }
 
-    function _finalizeLottery(uint256 _lotteryId) private {
+    function _finalizeLottery(uint256 _lotteryId, bool _isExpired) internal {
         LotteryInfo storage lottery = lotteries[_lotteryId];
         LotteryConfig memory config = lotterySettings[_lotteryId];
+        address finalizer = msg.sender;
 
         require(lottery.isActive, "Lottery not active");
         require(!lottery.isCompleted, "Lottery completed");
-        require(
-            block.timestamp >= lottery.endTime ||
-                (lottery.maxTickets > 0 &&
-                    lotteryParticipants[_lotteryId].length >= lottery.maxTickets),
-            "Lottery ongoing"
-        );
+        // Note: Time/condition checks are now in finalizeLottery() for better access control
 
         uint256 totalPlayers = lotteryParticipants[_lotteryId].length;
         require(totalPlayers > 0, "No participants");
@@ -259,7 +286,14 @@ contract Lottery {
 
         delete lotteryWinners[_lotteryId];
         address[] storage winners = lotteryWinners[_lotteryId];
-        address[] memory participants = lotteryParticipants[_lotteryId];
+        address[] storage participants = lotteryParticipants[_lotteryId];
+        
+        // Create a copy of indices to avoid modifying the original participants array order
+        uint256[] memory indices = new uint256[](totalPlayers);
+        for (uint256 i = 0; i < totalPlayers; i++) {
+            indices[i] = i;
+        }
+        
         uint256 remaining = totalPlayers;
 
         for (uint256 i = 0; i < winnersCount; i++) {
@@ -268,17 +302,19 @@ contract Lottery {
                     abi.encodePacked(
                         block.timestamp,
                         block.prevrandao,
-                        participants.length,
+                        block.number,
+                        _lotteryId,
                         i
                     )
                 )
             ) % remaining;
 
-            address winner = participants[randomIndex];
+            uint256 selectedIndex = indices[randomIndex];
+            address winner = participants[selectedIndex];
             winners.push(winner);
 
-            // Move selected participant to the end to avoid reselection
-            participants[randomIndex] = participants[remaining - 1];
+            // Move selected index to the end to avoid reselection
+            indices[randomIndex] = indices[remaining - 1];
             remaining--;
         }
 
@@ -286,23 +322,64 @@ contract Lottery {
         lottery.isCompleted = true;
         lottery.winner = winners.length > 0 ? winners[0] : address(0);
 
+        // Calculate finalization reward (only for expired lotteries)
+        // Reward = min(max(0.1% of pool, 0.001 ETH), 0.01 ETH)
+        // This covers gas costs and incentivizes finalization
+        uint256 finalizationReward = 0;
+        if (_isExpired) {
+            uint256 rewardFromPool = (lottery.totalPool * FINALIZATION_REWARD_BPS) / 10_000;
+            uint256 calculatedReward = rewardFromPool > MIN_FINALIZATION_REWARD 
+                ? rewardFromPool 
+                : MIN_FINALIZATION_REWARD;
+            
+            // Cap the reward to avoid taking too much from small pools
+            finalizationReward = calculatedReward > MAX_FINALIZATION_REWARD
+                ? MAX_FINALIZATION_REWARD
+                : calculatedReward;
+            
+            // Ensure we don't take more than the pool
+            if (finalizationReward > lottery.totalPool) {
+                finalizationReward = lottery.totalPool;
+            }
+        }
+
+        // Calculate creator reward
         uint256 creatorReward = (lottery.totalPool * config.creatorPct) /
             MAX_CREATOR_PCT;
-        uint256 prizePool = lottery.totalPool - creatorReward;
+        
+        // Calculate prize pool (after creator reward and finalization reward)
+        uint256 prizePool = lottery.totalPool - creatorReward - finalizationReward;
         uint256 prizePerWinner = winners.length > 0
             ? prizePool / winners.length
             : 0;
+        
+        // Handle remainder to avoid lost funds due to integer division
+        uint256 remainder = winners.length > 0
+            ? prizePool % winners.length
+            : prizePool;
 
+        // Pay finalization reward (if expired lottery)
+        if (finalizationReward > 0) {
+            payable(finalizer).transfer(finalizationReward);
+        }
+
+        // Pay creator reward
         if (creatorReward > 0) {
             payable(lottery.creator).transfer(creatorReward);
         }
 
+        // Pay winners
         if (prizePerWinner > 0) {
             for (uint256 i = 0; i < winners.length; i++) {
                 payable(winners[i]).transfer(prizePerWinner);
             }
         }
+        
+        // Send remainder to first winner to avoid fund loss
+        if (remainder > 0 && winners.length > 0) {
+            payable(winners[0]).transfer(remainder);
+        }
 
-        emit WinnersSelected(_lotteryId, winners, prizePerWinner, creatorReward);
+        emit WinnersSelected(_lotteryId, winners, prizePerWinner, creatorReward, finalizationReward, finalizer);
     }
 }

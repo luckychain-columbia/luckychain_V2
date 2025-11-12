@@ -8,7 +8,7 @@ import { BrowserProvider } from "ethers"
 
 interface Web3ContextType {
   account: string | null // The user's wallet address (e.g., "0x123...")
-  connectWallet: () => Promise<void> // Function to connect to MetaMask
+  connectWallet: () => Promise<void> // Function to connect to a Web3 wallet
   disconnectWallet: () => void // Function to disconnect wallet
   provider: BrowserProvider | null // The ethers.js provider to interact with blockchain
   isConnecting: boolean // Loading state for connection
@@ -30,21 +30,21 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   const [provider, setProvider] = useState<BrowserProvider | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
 
-  // Function to connect to MetaMask
+  // Function to connect to a Web3 wallet
   const connectWallet = async () => {
     try {
       setIsConnecting(true)
       
-      // Check if MetaMask is installed (it injects "ethereum" into window)
+      // Check if a Web3 wallet is installed (it injects "ethereum" into window)
       if (typeof window.ethereum === "undefined") {
-        alert("Please install MetaMask to use LuckyChain!")
+        alert("Please install a Web3 wallet (like MetaMask) to use LuckyChain!")
         return
       }
 
       // Optional: Switch network (commented out - uncomment if needed)
       // await switchNetwork()
 
-      // Request account access. MetaMask will prompt the user (asks them to unlock if needed).
+      // Request account access. The wallet will prompt the user (asks them to unlock if needed).
       const accounts: string[] = await window.ethereum.request({
         method: "eth_requestAccounts",
       })
@@ -124,7 +124,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     setProvider(null)
   }
 
-  // Listen for account changes (when user switches accounts in MetaMask)
+      // Listen for account changes (when user switches accounts in their wallet)
   useEffect(() => {
     if (typeof window.ethereum !== "undefined") {
       const applyAccounts = async (accounts: string[]) => {
@@ -184,7 +184,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// TypeScript declaration for MetaMask's ethereum object
+// TypeScript declaration for Web3 wallet's ethereum provider (EIP-1193)
 declare global {
   interface Window {
     ethereum?: any

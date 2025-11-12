@@ -57,32 +57,66 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
     setIsLoading(true)
 
     try {
+      // Validate title
+      if (!formData.title?.trim()) {
+        throw new Error("Please enter a lottery title")
+      }
+
+      // Validate entry fee
+      const entryFee = parseFloat(formData.entryFee)
+      if (isNaN(entryFee) || entryFee <= 0) {
+        throw new Error("Please enter a valid ticket price (greater than 0)")
+      }
+
+      // Validate end date
       if (!formData.endDateTime) {
         throw new Error("Please select an end date and time")
       }
 
       const endDate = new Date(formData.endDateTime)
-      const endTimestamp = Math.floor(endDate.getTime() / 1000)
-      const nowSeconds = Math.floor(Date.now() / 1000)
-
-      if (endTimestamp <= nowSeconds) {
-        throw new Error("End date must be in the future")
+      if (isNaN(endDate.getTime())) {
+        throw new Error("Invalid end date format")
       }
 
+      const endTimestamp = Math.floor(endDate.getTime() / 1000)
+      const nowSeconds = Math.floor(Date.now() / 1000)
+      const minEndTime = nowSeconds + 60 // At least 1 minute in the future
+
+      if (endTimestamp < minEndTime) {
+        throw new Error("End date must be at least 1 minute in the future")
+      }
+
+      // Validate number of winners
+      const numWinners = Math.max(1, Math.floor(parseFloat(formData.numberOfWinners) || 1))
+      if (numWinners > 100) {
+        throw new Error("Number of winners cannot exceed 100")
+      }
+
+      // Validate max entrants
       const maxEntrants =
         formData.maxEntrants.trim().length > 0
-          ? parseInt(formData.maxEntrants, 10)
+          ? (() => {
+              const parsed = parseInt(formData.maxEntrants, 10)
+              if (isNaN(parsed) || parsed < 1) {
+                throw new Error("Max entrants must be a positive number")
+              }
+              if (parsed < numWinners) {
+                throw new Error("Max entrants cannot be less than number of winners")
+              }
+              return parsed
+            })()
           : null
 
-      const numWinners = Math.max(1, parseInt(formData.numberOfWinners, 10) || 1)
+      // Validate creator fee
+      const creatorFee = Math.max(0, Math.min(100, formData.creatorFee))
 
       await createLottery({
-        title: formData.title,
-        description: formData.description || formData.title,
+        title: formData.title.trim(),
+        description: (formData.description || formData.title).trim(),
         entryFee: formData.entryFee,
         endDateTime: endTimestamp,
         numWinners,
-        creatorFeePct: formData.creatorFee,
+        creatorFeePct: creatorFee,
         maxEntrants,
         allowMultipleEntries: formData.allowMultipleEntries,
       })
@@ -270,7 +304,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
               {isLoading ? "Creating..." : "Create Lottery"}
             </Button>
             <p className="text-sm text-gray-400 text-center">
-              This will create a transaction in MetaMask for you to approve
+              This will create a transaction in your wallet for you to approve
             </p>
           </div>
         </form>

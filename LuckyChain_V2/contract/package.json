@@ -8,7 +8,14 @@
     "test": "hardhat test",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
-    "env:sync": "node scripts/update-env.js"
+    "deploy": "node scripts/deploy-and-sync.js",
+    "env:sync": "node scripts/update-env.js",
+    "export:abi": "node scripts/export-abi.js",
+    "verify": "node scripts/verify-deployment.js",
+    "check": "node scripts/check-deployment.js",
+    "pre-check": "node scripts/pre-deploy-check.js",
+    "full:deploy": "node scripts/full-deploy.js",
+    "postcompile": "npm run export:abi"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",

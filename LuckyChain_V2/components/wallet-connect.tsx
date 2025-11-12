@@ -12,7 +12,7 @@ export function WalletConnect() {
   const [showWarning, setShowWarning] = useState(false)
 
   useEffect(() => {
-    // Check if MetaMask is available
+    // Check if a Web3 wallet is available
     if (typeof window.ethereum === "undefined") {
       setShowWarning(true)
     }
@@ -68,7 +68,7 @@ export function WalletConnect() {
         <Alert className="glass-strong glow-border border-destructive/50 max-w-sm shadow-lg">
           <AlertCircle className="h-4 w-4 text-destructive" />
           <AlertDescription className="text-xs leading-relaxed">
-            Install MetaMask to interact with the blockchain. Currently viewing demo mode.
+            Install a Web3 wallet (like MetaMask) to interact with the blockchain. Currently viewing demo mode.
           </AlertDescription>
         </Alert>
       )}

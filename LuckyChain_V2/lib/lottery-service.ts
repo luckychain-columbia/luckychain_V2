@@ -151,7 +151,7 @@ export async function createLottery(
   durationInDays: number,
 ) {
   if (!isWeb3Available()) {
-    throw new Error("Please install MetaMask or another Web3 wallet to create lotteries")
+    throw new Error("Please install a Web3 wallet to create lotteries")
   }
 
   if (!isContractDeployed()) {
@@ -189,7 +189,7 @@ export async function createLottery(
 
 export async function buyTicket(lotteryId: number, ticketPrice: bigint) {
   if (!isWeb3Available()) {
-    throw new Error("Please install MetaMask or another Web3 wallet to buy tickets")
+    throw new Error("Please install a Web3 wallet to buy tickets")
   }
 
   if (!isContractDeployed()) {
@@ -208,7 +208,7 @@ export async function buyTicket(lotteryId: number, ticketPrice: bigint) {
 
 export async function selectWinner(lotteryId: number) {
   if (!isWeb3Available()) {
-    throw new Error("Please install MetaMask or another Web3 wallet to select winners")
+    throw new Error("Please install a Web3 wallet to select winners")
   }
 
   if (!isContractDeployed()) {
