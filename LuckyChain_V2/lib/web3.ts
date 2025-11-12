@@ -5,16 +5,21 @@ import { useEffect, useState } from "react"
 
 // Contract ABI (simplified for demo)
 export const LOTTERY_ABI = [
-  "function createLottery(string memory _title, string memory _description, uint256 _ticketPrice, uint256 _maxTickets, uint256 _duration) external returns (uint256)",
+  "function createLottery(string _title, string _description, uint256 _ticketPrice, uint256 _endDateTime, uint8 _numWinners, uint16 _creatorPct, uint256 _maxTickets, bool _allowMultipleEntries) external returns (uint256)",
   "function buyTicket(uint256 _lotteryId) external payable",
+  "function buyTickets(uint256 _lotteryId, uint256 _ticketCount) external payable",
   "function selectWinner(uint256 _lotteryId) external",
+  "function endLottery(uint256 _lotteryId) external",
   "function getLotteryInfo(uint256 _lotteryId) external view returns (tuple(address creator, string title, string description, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, bool isActive, bool isCompleted, address winner, uint256 totalPool))",
+  "function getLotteryConfig(uint256 _lotteryId) external view returns (tuple(uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries))",
   "function getParticipants(uint256 _lotteryId) external view returns (address[] memory)",
   "function getUserTickets(uint256 _lotteryId, address _user) external view returns (uint256[] memory)",
+  "function getWinners(uint256 _lotteryId) external view returns (address[] memory)",
+  "function getLotteries(uint256 start, uint256 count) external view returns (tuple(address creator, string title, string description, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, bool isActive, bool isCompleted, address winner, uint256 totalPool)[], tuple(uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries)[])",
   "function lotteryCount() external view returns (uint256)",
-  "event LotteryCreated(uint256 indexed lotteryId, address indexed creator, string title, uint256 ticketPrice, uint256 maxTickets, uint256 endTime)",
-  "event TicketPurchased(uint256 indexed lotteryId, address indexed participant, uint256 ticketNumber, uint256 amount)",
-  "event WinnerSelected(uint256 indexed lotteryId, address indexed winner, uint256 prizeAmount)",
+  "event LotteryCreated(uint256 indexed lotteryId, address indexed creator, string title, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries)",
+  "event TicketsPurchased(uint256 indexed lotteryId, address indexed participant, uint256[] ticketNumbers, uint256 amountPaid)",
+  "event WinnersSelected(uint256 indexed lotteryId, address[] winners, uint256 prizePerWinner, uint256 creatorReward)",
 ]
 
 // For demo purposes - in production, deploy to testnet/mainnet

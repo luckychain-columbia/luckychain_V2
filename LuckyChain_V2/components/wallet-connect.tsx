@@ -2,54 +2,34 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { connectWallet, getAccount, shortenAddress, isWeb3Available } from "@/lib/web3"
+import { shortenAddress } from "@/app/utils"
 import { Wallet, AlertCircle, LogOut } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useWeb3 } from "@/app/context/Web3Context"
 
 export function WalletConnect() {
-  const [account, setAccount] = useState<string | null>(null)
-  const [isConnecting, setIsConnecting] = useState(false)
+  const { account, connectWallet, disconnectWallet, isConnecting } = useWeb3()
   const [showWarning, setShowWarning] = useState(false)
 
   useEffect(() => {
-    checkConnection()
-
-    if (isWeb3Available() && window.ethereum) {
-      window.ethereum.on("accountsChanged", (accounts: string[]) => {
-        setAccount(accounts[0] || null)
-      })
-    } else {
+    // Check if MetaMask is available
+    if (typeof window.ethereum === "undefined") {
       setShowWarning(true)
     }
   }, [])
 
-  async function checkConnection() {
-    const acc = await getAccount()
-    setAccount(acc)
-  }
-
   async function handleConnect() {
-    if (!isWeb3Available()) {
-      setShowWarning(true)
-      return
-    }
-
-    setIsConnecting(true)
     try {
-      const acc = await connectWallet()
-      setAccount(acc)
+      await connectWallet()
       setShowWarning(false)
     } catch (error) {
       console.error("Failed to connect wallet:", error)
-    } finally {
-      setIsConnecting(false)
+      setShowWarning(true)
     }
   }
 
   function handleDisconnect() {
-    // Clear the local account state
-    // Note: This doesn't disconnect from MetaMask itself, but clears the app's connection state
-    setAccount(null)
+    disconnectWallet()
     setShowWarning(false)
   }
 

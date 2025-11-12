@@ -5,21 +5,23 @@ import { WalletConnect } from "@/components/wallet-connect"
 import { LotteryCard } from "@/components/lottery-card"
 import { CreateLotteryDialog } from "@/components/create-lottery-dialog"
 import { PixelatedCash } from "@/components/pixelated-cash"
-import { getAllLotteries } from "@/lib/lottery-service"
 import type { LotteryData } from "@/lib/web3"
 import { Sparkles, Trophy, Shield, Zap } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAccount } from "@/lib/web3"
+import { useWeb3 } from "./context/Web3Context"
+import useContract, { type ContractLottery } from "./services/contract"
 
 export default function Home() {
-  const [lotteries, setLotteries] = useState<Array<LotteryData & { id: number }>>([])
+  const [lotteries, setLotteries] = useState<ContractLottery[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("active")
-  const { address } = useAccount()
+  const { account: address } = useWeb3()
+  const { loadLotteries: loadLotteriesFromContract } = useContract()
 
-  async function loadLotteries() {
+  async function handleLoadLotteries() {
+    setIsLoading(true)
     try {
-      const data = await getAllLotteries()
+      const data = await loadLotteriesFromContract()
       setLotteries(data.reverse())
     } catch (error) {
       console.error("Failed to load lotteries:", error)
@@ -30,7 +32,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadLotteries()
+    handleLoadLotteries()
   }, [])
 
   const activeLotteries = lotteries.filter((lottery) => lottery.isActive)
@@ -119,7 +121,7 @@ export default function Home() {
             </p>
 
             <div className="flex items-center justify-center gap-4 pt-4">
-              <CreateLotteryDialog onSuccess={loadLotteries} />
+              <CreateLotteryDialog onSuccess={handleLoadLotteries} />
             </div>
           </div>
 
@@ -201,12 +203,12 @@ export default function Home() {
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
                 <h3 className="text-2xl font-semibold mb-3">No active lotteries</h3>
                 <p className="text-muted-foreground mb-8 text-lg">Be the first to create a lottery on the platform</p>
-                <CreateLotteryDialog onSuccess={loadLotteries} />
+                <CreateLotteryDialog onSuccess={handleLoadLotteries} />
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeLotteries.map((lottery) => (
-                  <LotteryCard key={lottery.id} lottery={lottery} onUpdate={loadLotteries} />
+                  <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
                 ))}
               </div>
             )}
@@ -228,7 +230,7 @@ export default function Home() {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {endedLotteries.map((lottery) => (
-                  <LotteryCard key={lottery.id} lottery={lottery} onUpdate={loadLotteries} />
+                  <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
                 ))}
               </div>
             )}
@@ -264,7 +266,7 @@ export default function Home() {
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {enteredLotteries.map((lottery) => (
-                        <LotteryCard key={lottery.id} lottery={lottery} onUpdate={loadLotteries} />
+                        <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
                       ))}
                     </div>
                   )}
@@ -278,12 +280,12 @@ export default function Home() {
                   {createdLotteries.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
                       <p className="text-muted-foreground mb-6">You haven't created any lotteries yet</p>
-                      <CreateLotteryDialog onSuccess={loadLotteries} />
+                      <CreateLotteryDialog onSuccess={handleLoadLotteries} />
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {createdLotteries.map((lottery) => (
-                        <LotteryCard key={lottery.id} lottery={lottery} onUpdate={loadLotteries} />
+                        <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
                       ))}
                     </div>
                   )}

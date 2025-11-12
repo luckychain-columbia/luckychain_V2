@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import useContract from "@/app/services/contract"
+import { useWeb3 } from "@/app/context/Web3Context"
 
 interface CreateLotteryDialogProps {
   onSuccess?: () => void
@@ -26,36 +28,80 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const { createLottery } = useContract()
+  const { account } = useWeb3()
 
   const [formData, setFormData] = useState({
     title: "",
+    description: "",
     entryFee: "",
-    creatorFee: 10,
+    creatorFee: 5,
     numberOfWinners: "1",
     endDateTime: "",
     maxEntrants: "",
-    allowMultipleEntries: false,
+    allowMultipleEntries: true,
   })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    
+    if (!account) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to create a lottery",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
     try {
+      if (!formData.endDateTime) {
+        throw new Error("Please select an end date and time")
+      }
+
+      const endDate = new Date(formData.endDateTime)
+      const endTimestamp = Math.floor(endDate.getTime() / 1000)
+      const nowSeconds = Math.floor(Date.now() / 1000)
+
+      if (endTimestamp <= nowSeconds) {
+        throw new Error("End date must be in the future")
+      }
+
+      const maxEntrants =
+        formData.maxEntrants.trim().length > 0
+          ? parseInt(formData.maxEntrants, 10)
+          : null
+
+      const numWinners = Math.max(1, parseInt(formData.numberOfWinners, 10) || 1)
+
+      await createLottery({
+        title: formData.title,
+        description: formData.description || formData.title,
+        entryFee: formData.entryFee,
+        endDateTime: endTimestamp,
+        numWinners,
+        creatorFeePct: formData.creatorFee,
+        maxEntrants,
+        allowMultipleEntries: formData.allowMultipleEntries,
+      })
+
       toast({
         title: "Success!",
-        description: "Lottery created successfully (mock mode - connect to a real network to create on-chain)",
+        description: "Lottery created successfully",
       })
 
       setOpen(false)
       setFormData({
         title: "",
+        description: "",
         entryFee: "",
-        creatorFee: 10,
+        creatorFee: 5,
         numberOfWinners: "1",
         endDateTime: "",
         maxEntrants: "",
-        allowMultipleEntries: false,
+        allowMultipleEntries: true,
       })
       onSuccess?.()
     } catch (error: any) {
@@ -99,6 +145,19 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
             <p className="text-sm text-gray-400">{formData.title.length}/50 characters</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-white font-medium">
+              Description
+            </Label>
+            <Input
+              id="description"
+              placeholder="Describe your lottery..."
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
           </div>
 
           <div className="space-y-2">

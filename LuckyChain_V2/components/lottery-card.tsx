@@ -3,25 +3,47 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { type LotteryData, formatEther, shortenAddress, isWeb3Available } from "@/lib/web3"
+import { Input } from "@/components/ui/input"
+import type { ContractLottery } from "@/app/services/contract"
+import { formatEther, shortenAddress } from "@/app/utils"
 import { Clock, Users, Trophy, Coins } from "lucide-react"
 import { useState, useEffect } from "react"
-import { buyTicket, getParticipants } from "@/lib/lottery-service"
 import { useToast } from "@/hooks/use-toast"
+import useContract from "@/app/services/contract"
+import { useWeb3 } from "@/app/context/Web3Context"
 
 interface LotteryCardProps {
-  lottery: LotteryData & { id: number }
+  lottery: ContractLottery
   onUpdate?: () => void
 }
 
 export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [participants, setParticipants] = useState<string[]>([])
+  const [winners, setWinners] = useState<string[]>(lottery.winners ?? [])
+  const [ticketCount, setTicketCount] = useState<number>(1)
   const { toast } = useToast()
+  const { buyTicket, getParticipants, getWinners } = useContract()
+  const { account } = useWeb3()
+  const allowMultipleEntries = lottery.allowMultipleEntries ?? false
 
   useEffect(() => {
     loadParticipants()
   }, [lottery.id])
+
+  useEffect(() => {
+    setWinners(lottery.winners ?? [])
+
+    if (lottery.isCompleted) {
+      void loadWinners()
+    }
+  }, [lottery.id, lottery.isCompleted, lottery.winners])
+
+  useEffect(() => {
+    if (!allowMultipleEntries) {
+      setTicketCount(1)
+    }
+  }, [lottery.id, allowMultipleEntries])
 
   const endDate = new Date(Number(lottery.endTime) * 1000)
   const now = new Date()
@@ -38,11 +60,48 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
     }
   }
 
+  async function loadWinners() {
+    if (!lottery.isCompleted) {
+      setWinners([])
+      return
+    }
+
+    if (lottery.winners && lottery.winners.length > 0) {
+      setWinners(lottery.winners)
+      return
+    }
+
+    try {
+      const fetched = await getWinners(lottery.id)
+      setWinners(fetched)
+    } catch (error) {
+      console.warn("Failed to load winners:", error)
+    }
+  }
+
   async function handleBuyTicket() {
-    if (!isWeb3Available()) {
+    if (!account) {
       toast({
         title: "Wallet Required",
-        description: "Please install MetaMask or another Web3 wallet to buy tickets",
+        description: "Please connect your wallet to buy tickets",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (invalidTicketCount) {
+      toast({
+        title: "Invalid quantity",
+        description: "Please enter a valid ticket amount",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (exceedsCapacity) {
+      toast({
+        title: "Not enough tickets",
+        description: "The requested number of tickets exceeds availability",
         variant: "destructive",
       })
       return
@@ -50,13 +109,19 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
 
     setIsLoading(true)
     try {
-      await buyTicket(lottery.id, lottery.ticketPrice)
+      const ticketPriceEth = Number(formatEther(lottery.ticketPrice))
+      await buyTicket(lottery.id, ticketPriceEth, desiredTicketCount)
       toast({
         title: "Success!",
-        description: "Ticket purchased successfully",
+        description:
+          desiredTicketCount > 1
+            ? `${desiredTicketCount} tickets purchased successfully`
+            : "Ticket purchased successfully",
       })
       await loadParticipants()
+      await loadWinners()
       onUpdate?.()
+      setTicketCount(1)
     } catch (error: any) {
       toast({
         title: "Error",
@@ -69,7 +134,35 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
   }
 
   const ticketsSold = participants.length
-  const progress = (ticketsSold / Number(lottery.maxTickets)) * 100
+  const maxTicketsNumber = Number(lottery.maxTickets)
+  const progress =
+    maxTicketsNumber > 0
+      ? Math.min(100, (ticketsSold / maxTicketsNumber) * 100)
+      : participants.length > 0
+        ? 100
+        : 0
+  const rawCreatorPct = lottery.creatorPct ?? (lottery as any).creatorFeePct ?? 0
+  const creatorFeePercent =
+    typeof rawCreatorPct === "number"
+      ? rawCreatorPct > 100
+        ? rawCreatorPct / 100
+        : rawCreatorPct
+      : 0
+  const numWinners = (lottery.numWinners ?? winners.length) || 1
+  const winnersToDisplay =
+    winners.length > 0 ? winners : (lottery.winners ?? [])
+  const ticketsRemaining =
+    maxTicketsNumber > 0
+      ? Math.max(0, maxTicketsNumber - ticketsSold)
+      : undefined
+  const desiredTicketCount = allowMultipleEntries ? ticketCount : 1
+  const capacityReached =
+    ticketsRemaining !== undefined ? ticketsRemaining === 0 : false
+  const exceedsCapacity =
+    ticketsRemaining !== undefined
+      ? desiredTicketCount > ticketsRemaining
+      : false
+  const invalidTicketCount = desiredTicketCount < 1
 
   return (
     <Card className="glass-strong glow-border overflow-hidden border-0 shadow-2xl hover:shadow-primary/20 hover:scale-[1.02] transition-all duration-300 group">
@@ -144,6 +237,61 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
           </div>
         </div>
 
+        {lottery.isActive && !lottery.isCompleted && (
+          <div className="glass p-4 rounded-2xl border border-border/40 bg-border/5 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-xs font-medium">
+                Tickets to Purchase
+              </span>
+              {ticketsRemaining !== undefined && (
+                <span className="text-xs text-muted-foreground">
+                  {ticketsRemaining} remaining
+                </span>
+              )}
+            </div>
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              disabled={!allowMultipleEntries}
+              value={allowMultipleEntries ? ticketCount : 1}
+              onChange={(event) => {
+                const nextValue = Number(event.target.value)
+                if (Number.isNaN(nextValue)) {
+                  setTicketCount(1)
+                  return
+                }
+                setTicketCount(Math.max(1, Math.floor(nextValue)))
+              }}
+            />
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="glass p-4 rounded-2xl border border-border/40 bg-border/5 flex flex-col">
+            <span className="text-muted-foreground text-xs font-medium">
+              Number of Winners
+            </span>
+            <span className="text-lg font-semibold mt-auto">{numWinners}</span>
+          </div>
+          <div className="glass p-4 rounded-2xl border border-border/40 bg-border/5 flex flex-col">
+            <span className="text-muted-foreground text-xs font-medium">
+              Creator Fee
+            </span>
+            <span className="text-lg font-semibold mt-auto">
+              {creatorFeePercent.toFixed(2)}%
+            </span>
+          </div>
+          <div className="glass p-4 rounded-2xl border border-border/40 bg-border/5 flex flex-col">
+            <span className="text-muted-foreground text-xs font-medium">
+              Multiple Entries
+            </span>
+            <span className="text-lg font-semibold mt-auto">
+              {allowMultipleEntries ? "Allowed" : "Single entry"}
+            </span>
+          </div>
+        </div>
+
         {/* Time + Participants */}
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -167,30 +315,54 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
         </div>
 
         {/* Winner Section */}
-        {lottery.isCompleted &&
-          lottery.winner !==
-            "0x0000000000000000000000000000000000000000" && (
-            <div className="glass glow-border p-4 rounded-2xl">
-              <div className="text-xs text-muted-foreground mb-2 font-medium">
-                Winner
-              </div>
-              <div className="font-mono text-sm font-semibold text-primary">
-                {shortenAddress(lottery.winner)}
-              </div>
+        {lottery.isCompleted && (
+          <div className="glass glow-border p-4 rounded-2xl">
+            <div className="text-xs text-muted-foreground mb-2 font-medium">
+              Winners ({winnersToDisplay.length}/{numWinners})
             </div>
-          )}
+            {winnersToDisplay.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {winnersToDisplay.map((addr) => (
+                  <div
+                    key={`${lottery.id}-${addr}`}
+                    className="font-mono text-sm font-semibold text-primary"
+                  >
+                    {shortenAddress(addr)}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-sm">
+                Awaiting winner finalization...
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Buy Ticket Button */}
         {lottery.isActive && !lottery.isCompleted && (
           <Button
             onClick={handleBuyTicket}
             disabled={
-              isLoading || ticketsSold >= Number(lottery.maxTickets)
+              isLoading ||
+              capacityReached ||
+              invalidTicketCount ||
+              exceedsCapacity
             }
             className="w-full glass-strong font-semibold text-base h-12 gradient-iridescent hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
           >
-            {isLoading ? "Processing..." : "Buy Ticket"}
+            {isLoading
+              ? "Processing..."
+              : allowMultipleEntries && desiredTicketCount > 1
+                ? `Buy ${desiredTicketCount} Tickets`
+                : "Buy Ticket"}
           </Button>
+        )}
+
+        {!allowMultipleEntries && lottery.isActive && !lottery.isCompleted && (
+          <span className="text-xs text-muted-foreground block text-center">
+            Multiple entries are disabled for this lottery.
+          </span>
         )}
       </div>
     </Card>
