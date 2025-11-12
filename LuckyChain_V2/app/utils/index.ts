@@ -37,8 +37,23 @@ export function normalizeLottery(
   const maxTickets = raw.maxTickets ?? raw.maxEntrants ?? BigInt(0)
   const maxEntrants = Number(maxTickets)
   const creator = raw.creator || ""
-  const isActive = raw.isActive ?? !raw.ended ?? false
-  const isCompleted = raw.isCompleted ?? raw.ended ?? false
+
+  const endedFlag =
+    raw.ended !== undefined ? Boolean(raw.ended) : undefined
+
+  const isActive =
+    raw.isActive !== undefined
+      ? Boolean(raw.isActive)
+      : endedFlag !== undefined
+        ? !endedFlag
+        : false
+
+  const isCompleted =
+    raw.isCompleted !== undefined
+      ? Boolean(raw.isCompleted)
+      : endedFlag !== undefined
+        ? endedFlag
+        : false
   const winner = raw.winner || "0x0000000000000000000000000000000000000000"
   const totalPool = raw.totalPool ?? BigInt(0)
   
