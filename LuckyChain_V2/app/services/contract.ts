@@ -72,7 +72,7 @@ const useContract = () => {
         // Try batch fetch first (more efficient)
         try {
           const [infos, configs] = await contract.getLotteries(0, count)
-          const winnerPromises = infos.map((_, i) =>
+          const winnerPromises = infos.map((_info: any, i: number) =>
             contract.getWinners(i).catch(() => [] as string[])
           )
           const winners = await Promise.all(winnerPromises)
