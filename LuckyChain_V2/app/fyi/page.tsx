@@ -106,7 +106,7 @@ export default function FYIPage() {
                 </div>
                 <Accordion type="single" collapsible className="w-full space-y-2">
                   <AccordionItem value="what-is-luckychain" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       What is LuckyChain?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-3 pt-2">
@@ -149,7 +149,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="how-to-create" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       How do I create a lottery?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-3 pt-2">
@@ -188,7 +188,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="how-to-participate" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       How do I participate in a lottery?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-3 pt-2">
@@ -224,7 +224,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="how-winners-selected" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       How are winners selected?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-3 pt-2">
@@ -270,7 +270,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="how-finalization-works" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       How does finalization work?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-3 pt-2">
@@ -330,7 +330,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="is-it-secure" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       Is it secure and fair?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-3 pt-2">
@@ -375,7 +375,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="gas-fees" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       How much do gas fees cost?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -403,7 +403,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="multiple-winners" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       How are multiple winners selected?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -436,7 +436,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="creator-fee" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       What is the creator fee?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -467,7 +467,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="no-participants" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       What happens if no one participates?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -508,7 +508,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="finalization-reward" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       Who gets the finalization reward?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -548,7 +548,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="can-creator-cheat" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       Can the creator cheat or manipulate results?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -598,7 +598,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="what-if-creator-disappears" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       What if the creator disappears or loses their wallet?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -648,7 +648,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="multiple-tickets" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       Does buying multiple tickets increase my chances?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -707,7 +707,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="when-do-i-get-paid" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       When do winners receive their prizes?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
@@ -772,7 +772,7 @@ export default function FYIPage() {
                   </AccordionItem>
 
                   <AccordionItem value="what-network" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left hover:no-underline text-lg font-semibold">
+                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
                       Which blockchain network does this use?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 pt-2">
