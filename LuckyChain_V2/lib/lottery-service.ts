@@ -1,4 +1,4 @@
-import { getContract, type LotteryData, parseEther, isWeb3Available } from "./web3"
+import { getContract, type LotteryData, parseEther, isWeb3Available, isContractDeployed } from "./web3"
 
 const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] }> = [
   {
@@ -154,28 +154,37 @@ export async function createLottery(
     throw new Error("Please install MetaMask or another Web3 wallet to create lotteries")
   }
 
-  const contract = await getContract()
-  const durationInSeconds = durationInDays * 24 * 60 * 60
-
-  const tx = await contract.createLottery(title, description, parseEther(ticketPrice), maxTickets, durationInSeconds)
-
-  const receipt = await tx.wait()
-
-  // Extract lottery ID from event
-  const event = receipt.logs.find((log: any) => {
-    try {
-      return contract.interface.parseLog(log)?.name === "LotteryCreated"
-    } catch {
-      return false
-    }
-  })
-
-  if (event) {
-    const parsed = contract.interface.parseLog(event)
-    return parsed?.args[0].toString()
+  if (!isContractDeployed()) {
+    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS environment variable with a deployed contract address.")
   }
 
-  return null
+  try {
+    const contract = await getContract()
+    const durationInSeconds = durationInDays * 24 * 60 * 60
+
+    const tx = await contract.createLottery(title, description, parseEther(ticketPrice), maxTickets, durationInSeconds)
+
+    const receipt = await tx.wait()
+
+    // Extract lottery ID from event
+    const event = receipt.logs.find((log: any) => {
+      try {
+        return contract.interface.parseLog(log)?.name === "LotteryCreated"
+      } catch {
+        return false
+      }
+    })
+
+    if (event) {
+      const parsed = contract.interface.parseLog(event)
+      return parsed?.args[0].toString()
+    }
+
+    return null
+  } catch (error: any) {
+    console.error("Error creating lottery:", error)
+    throw new Error(error.message || "Failed to create lottery. Make sure the contract is deployed and you have the correct permissions.")
+  }
 }
 
 export async function buyTicket(lotteryId: number, ticketPrice: bigint) {
@@ -183,9 +192,18 @@ export async function buyTicket(lotteryId: number, ticketPrice: bigint) {
     throw new Error("Please install MetaMask or another Web3 wallet to buy tickets")
   }
 
-  const contract = await getContract()
-  const tx = await contract.buyTicket(lotteryId, { value: ticketPrice })
-  await tx.wait()
+  if (!isContractDeployed()) {
+    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS environment variable with a deployed contract address.")
+  }
+
+  try {
+    const contract = await getContract()
+    const tx = await contract.buyTicket(lotteryId, { value: ticketPrice })
+    await tx.wait()
+  } catch (error: any) {
+    console.error("Error buying ticket:", error)
+    throw new Error(error.message || "Failed to buy ticket. Make sure the contract is deployed and you have sufficient funds.")
+  }
 }
 
 export async function selectWinner(lotteryId: number) {
@@ -193,13 +211,22 @@ export async function selectWinner(lotteryId: number) {
     throw new Error("Please install MetaMask or another Web3 wallet to select winners")
   }
 
-  const contract = await getContract()
-  const tx = await contract.selectWinner(lotteryId)
-  await tx.wait()
+  if (!isContractDeployed()) {
+    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS environment variable with a deployed contract address.")
+  }
+
+  try {
+    const contract = await getContract()
+    const tx = await contract.selectWinner(lotteryId)
+    await tx.wait()
+  } catch (error: any) {
+    console.error("Error selecting winner:", error)
+    throw new Error(error.message || "Failed to select winner. Make sure the contract is deployed and you have the correct permissions.")
+  }
 }
 
 export async function getLotteryInfo(lotteryId: number): Promise<LotteryData> {
-  if (!isWeb3Available()) {
+  if (!isWeb3Available() || !isContractDeployed()) {
     const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
     if (mockLottery) {
       const { id, participants, ...data } = mockLottery
@@ -208,12 +235,23 @@ export async function getLotteryInfo(lotteryId: number): Promise<LotteryData> {
     throw new Error("Lottery not found")
   }
 
-  const contract = await getContract()
-  return await contract.getLotteryInfo(lotteryId)
+  try {
+    const contract = await getContract()
+    return await contract.getLotteryInfo(lotteryId)
+  } catch (error) {
+    // Fallback to mock data if contract call fails
+    console.warn("Contract call failed, using mock data:", error)
+    const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
+    if (mockLottery) {
+      const { id, participants, ...data } = mockLottery
+      return data
+    }
+    throw new Error("Lottery not found")
+  }
 }
 
 export async function getParticipants(lotteryId: number): Promise<string[]> {
-  if (!isWeb3Available()) {
+  if (!isWeb3Available() || !isContractDeployed()) {
     const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
     if (mockLottery) {
       return mockLottery.participants || []
@@ -221,42 +259,67 @@ export async function getParticipants(lotteryId: number): Promise<string[]> {
     return []
   }
 
-  const contract = await getContract()
-  return await contract.getParticipants(lotteryId)
+  try {
+    const contract = await getContract()
+    return await contract.getParticipants(lotteryId)
+  } catch (error) {
+    // Fallback to mock data if contract call fails
+    console.warn("Contract call failed, using mock data:", error)
+    const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
+    return mockLottery?.participants || []
+  }
 }
 
 export async function getUserTickets(lotteryId: number, userAddress: string): Promise<number[]> {
-  if (!isWeb3Available()) {
+  if (!isWeb3Available() || !isContractDeployed()) {
     return []
   }
 
-  const contract = await getContract()
-  const tickets = await contract.getUserTickets(lotteryId, userAddress)
-  return tickets.map((t: bigint) => Number(t))
+  try {
+    const contract = await getContract()
+    const tickets = await contract.getUserTickets(lotteryId, userAddress)
+    return tickets.map((t: bigint) => Number(t))
+  } catch (error) {
+    // Fallback to empty array if contract call fails
+    console.warn("Contract call failed, returning empty tickets:", error)
+    return []
+  }
 }
 
 export async function getLotteryCount(): Promise<number> {
-  if (!isWeb3Available()) {
+  if (!isWeb3Available() || !isContractDeployed()) {
     return MOCK_LOTTERIES.length
   }
 
-  const contract = await getContract()
-  const count = await contract.lotteryCount()
-  return Number(count)
+  try {
+    const contract = await getContract()
+    const count = await contract.lotteryCount()
+    return Number(count)
+  } catch (error) {
+    // Fallback to mock data if contract call fails
+    console.warn("Contract call failed, using mock data:", error)
+    return MOCK_LOTTERIES.length
+  }
 }
 
 export async function getAllLotteries(): Promise<Array<LotteryData & { id: number }>> {
-  if (!isWeb3Available()) {
+  if (!isWeb3Available() || !isContractDeployed()) {
     return MOCK_LOTTERIES
   }
 
-  const count = await getLotteryCount()
-  const lotteries = []
+  try {
+    const count = await getLotteryCount()
+    const lotteries = []
 
-  for (let i = 0; i < count; i++) {
-    const info = await getLotteryInfo(i)
-    lotteries.push({ ...info, id: i })
+    for (let i = 0; i < count; i++) {
+      const info = await getLotteryInfo(i)
+      lotteries.push({ ...info, id: i })
+    }
+
+    return lotteries
+  } catch (error) {
+    // Fallback to mock data if contract calls fail
+    console.warn("Contract calls failed, using mock data:", error)
+    return MOCK_LOTTERIES
   }
-
-  return lotteries
 }

@@ -38,6 +38,10 @@ export function isWeb3Available(): boolean {
   return typeof window !== "undefined" && typeof window.ethereum !== "undefined"
 }
 
+export function isContractDeployed(): boolean {
+  return LOTTERY_CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000"
+}
+
 export async function getProvider() {
   if (isWeb3Available()) {
     return new ethers.BrowserProvider(window.ethereum)
