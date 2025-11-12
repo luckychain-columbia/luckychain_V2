@@ -54,6 +54,14 @@ npm run deploy:sepolia
 
 The script will print the deployed contract address.
 
+After deploying with Hardhat Ignition, you can sync the frontend `.env.local` automatically:
+
+```bash
+npm run env:sync -- --network sepolia
+```
+
+This reads the latest Ignition deployment, finds `LotteryModule`, and writes the address to `../.env.local` as `NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS`.
+
 ## Tests
 
 Add tests inside the `test/` folder and run them with:
