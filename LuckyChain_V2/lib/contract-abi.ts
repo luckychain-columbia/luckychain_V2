@@ -57,6 +57,12 @@ export const RAFFLE_ABI = [
         "internalType": "bool",
         "name": "allowMultipleEntries",
         "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "seedAmount",
+        "type": "uint256"
       }
     ],
     "name": "RaffleCreated",
@@ -177,6 +183,32 @@ export const RAFFLE_ABI = [
   },
   {
     "inputs": [],
+    "name": "MAX_TICKETS_PER_RAFFLE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_TICKETS_PER_TRANSACTION",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "MIN_FINALIZATION_REWARD",
     "outputs": [
       {
@@ -270,7 +302,7 @@ export const RAFFLE_ABI = [
         "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {

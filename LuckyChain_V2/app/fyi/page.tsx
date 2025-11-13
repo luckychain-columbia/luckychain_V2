@@ -171,8 +171,9 @@ export default function FYIPage() {
                             <li><strong>Ticket Price:</strong> How much each ticket costs in ETH</li>
                             <li><strong>End Date:</strong> When the raffle ends (must be in the future)</li>
                             <li><strong>Number of Winners:</strong> How many winners to select (1-100)</li>
-                            <li><strong>Creator Fee:</strong> Your percentage of the prize pool (0-100%)</li>
+                            <li><strong>Creator Fee:</strong> Your percentage of the total pool (0-100%)</li>
                             <li><strong>Max Entrants:</strong> Maximum number of participants (optional, leave blank for unlimited)</li>
+                            <li><strong>Seed Prize Pool:</strong> Optional initial amount to add to the prize pool (0-1000 ETH)</li>
                             <li><strong>Multiple Entries:</strong> Whether participants can buy multiple tickets</li>
                           </ul>
                         </div>
@@ -257,9 +258,9 @@ export default function FYIPage() {
                         <p className="font-semibold text-white mb-2">Prize Distribution</p>
                         <p className="text-sm mb-2">After winners are selected, prizes are distributed automatically:</p>
                         <ol className="ml-5 list-decimal space-y-1 text-sm">
-                          <li>Creator fee is calculated and sent to the raffle creator</li>
+                          <li>Creator fee is calculated from the total pool (seed + ticket purchases) and sent to the raffle creator</li>
                           <li>Finalization reward is calculated and sent to whoever finalized the raffle (if expired)</li>
-                          <li>Remaining prize pool is divided equally among all winners</li>
+                          <li>Remaining prize pool (seed + ticket purchases - fees) is divided equally among all winners</li>
                           <li>Any remainder from division is sent to the first winner</li>
                         </ol>
                         <p className="text-sm mt-2">
@@ -423,25 +424,66 @@ export default function FYIPage() {
                         <li>No participant can be selected twice</li>
                       </ol>
                       <p>
-                        <strong>Prize Distribution:</strong> The prize pool (after creator fee and
-                        finalization reward) is divided equally among all winners. Any remainder from
+                        <strong>Prize Distribution:</strong> The prize pool (seed amount + ticket purchases - creator fee - finalization reward) is divided equally among all winners. Any remainder from
                         integer division is sent to the first winner to ensure no funds are lost.
                       </p>
                       <p>
-                        <strong>Example:</strong> If a raffle has 100 participants, 3 winners, and a prize
-                        pool of 1 ETH, each winner receives 0.33 ETH, and the first winner receives an
-                        additional 0.01 ETH (the remainder).
+                        <strong>Example:</strong> If a raffle has 100 participants, 3 winners, a total pool of 2 ETH (1 ETH seed + 1 ETH tickets), 5% creator fee, and expired (finalization reward), each winner receives approximately 0.63 ETH, and the first winner receives an
+                        additional remainder amount.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
+                  <AccordionItem value="seed-prize-pool" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
+                      What is seeding the prize pool?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
+                      <p>
+                        Seeding the prize pool is an optional feature that allows raffle creators to add an initial lump sum of ETH to the prize pool when creating the raffle. This helps kickstart the raffle and make it more attractive to participants.
+                      </p>
+                      <div className="glass p-4 rounded-xl border border-blue-500/30 bg-blue-500/10 mt-3">
+                        <p className="font-semibold text-blue-500 mb-2 flex items-center gap-2">
+                          <Coins className="h-4 w-4" />
+                          How It Works
+                        </p>
+                        <ul className="text-sm ml-5 list-disc space-y-1">
+                          <li><strong>Optional:</strong> Creators can choose to seed the prize pool with 0-1000 ETH when creating a raffle</li>
+                          <li><strong>Initial Pool:</strong> The seed amount is added to the total pool immediately when the raffle is created</li>
+                          <li><strong>Combined Pool:</strong> The total pool = seed amount + all ticket purchases</li>
+                          <li><strong>Distribution:</strong> The seed amount is distributed to winners along with ticket purchase funds</li>
+                          <li><strong>Creator Fee:</strong> The creator fee is calculated from the total pool (seed + ticket purchases)</li>
+                        </ul>
+                      </div>
+                      <div className="glass p-4 rounded-xl border border-green-500/30 bg-green-500/10 mt-3">
+                        <p className="font-semibold text-green-500 mb-2">
+                          Example
+                        </p>
+                        <p className="text-sm mb-2">
+                          <strong>Scenario:</strong> Creator seeds 1.0 ETH, 50 tickets sold at 0.01 ETH each, 5% creator fee, 2 winners
+                        </p>
+                        <ul className="text-sm ml-5 list-disc space-y-1">
+                          <li><strong>Seed Amount:</strong> 1.0 ETH</li>
+                          <li><strong>Ticket Sales:</strong> 0.5 ETH (50 tickets × 0.01 ETH)</li>
+                          <li><strong>Total Pool:</strong> 1.5 ETH (seed + ticket sales)</li>
+                          <li><strong>Creator Fee (5%):</strong> 0.075 ETH</li>
+                          <li><strong>Finalization Reward (if expired):</strong> 0.001 ETH</li>
+                          <li><strong>Prize Pool:</strong> 1.424 ETH (distributed to 2 winners)</li>
+                          <li><strong>Prize per Winner:</strong> 0.712 ETH</li>
+                        </ul>
+                      </div>
+                      <p className="text-sm mt-3">
+                        <strong>Benefits:</strong> Seeding the prize pool makes raffles more attractive to participants, increases engagement, and can help raffles get started quickly. The seed amount is locked in the smart contract and distributed to winners automatically.
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
                   <AccordionItem value="creator-fee" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
                     <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       What is the creator fee?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
-                        The creator fee is a percentage of the prize pool that goes to the raffle creator
+                        The creator fee is a percentage of the total pool (seed amount + ticket purchases) that goes to the raffle creator
                         as compensation for creating and managing the raffle. This fee is set when creating
                         the raffle and can range from 0% to 100%.
                       </p>
@@ -450,12 +492,12 @@ export default function FYIPage() {
                       </p>
                       <ul className="ml-6 list-disc space-y-1">
                         <li>The creator sets the fee percentage when creating the raffle</li>
-                        <li>The fee is calculated from the total prize pool (sum of all ticket purchases)</li>
-                        <li>Creator receives: <code className="bg-muted px-1 rounded">pool × creator_fee% / 100</code></li>
-                        <li>Winners receive: <code className="bg-muted px-1 rounded">(pool - creator_fee - finalization_reward) / number_of_winners</code></li>
+                        <li>The fee is calculated from the total pool (seed amount + all ticket purchases)</li>
+                        <li>Creator receives: <code className="bg-muted px-1 rounded">total_pool × creator_fee% / 100</code></li>
+                        <li>Winners receive: <code className="bg-muted px-1 rounded">(total_pool - creator_fee - finalization_reward) / number_of_winners</code></li>
                       </ul>
                       <p>
-                        <strong>Example:</strong> If a raffle has a prize pool of 10 ETH, a creator fee of
+                        <strong>Example:</strong> If a raffle has a total pool of 10 ETH (1 ETH seed + 9 ETH tickets), a creator fee of
                         5%, and 2 winners, the creator receives 0.5 ETH, and each winner receives
                         approximately 4.75 ETH (after finalization reward if applicable).
                       </p>

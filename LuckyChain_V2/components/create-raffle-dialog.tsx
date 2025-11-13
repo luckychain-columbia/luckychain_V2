@@ -41,6 +41,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
     endDateTime: "",
     maxEntrants: "",
     allowMultipleEntries: true,
+    seedPrizePool: "",
   })
 
   async function handleSubmit(e: React.FormEvent) {
@@ -129,6 +130,22 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
       // Validate creator fee
       const creatorFee = Math.max(0, Math.min(100, formData.creatorFee))
 
+      // Validate seed prize pool (optional)
+      let seedPrizePool: string | undefined = undefined
+      if (formData.seedPrizePool.trim().length > 0) {
+        const seedAmount = parseFloat(formData.seedPrizePool)
+        if (isNaN(seedAmount) || seedAmount < 0) {
+          throw new Error("Seed prize pool must be a valid number greater than or equal to 0")
+        }
+        if (seedAmount > 1000) {
+          throw new Error("Seed prize pool cannot exceed 1000 ETH")
+        }
+        if (!Number.isFinite(seedAmount)) {
+          throw new Error("Seed prize pool must be a valid number")
+        }
+        seedPrizePool = formData.seedPrizePool
+      }
+
       await createRaffle({
         title: formData.title.trim(),
         description: (formData.description || formData.title).trim(),
@@ -138,11 +155,18 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
         creatorFeePct: creatorFee,
         maxEntrants,
         allowMultipleEntries: formData.allowMultipleEntries,
+        seedPrizePool,
       })
+
+      const seedAmount = seedPrizePool && parseFloat(seedPrizePool) > 0 
+        ? `${parseFloat(seedPrizePool).toFixed(4)} ETH` 
+        : null
 
       toast({
         title: "Success!",
-        description: "Raffle created successfully",
+        description: seedAmount 
+          ? `Raffle created successfully with ${seedAmount} seeded prize pool!`
+          : "Raffle created successfully",
       })
 
       setOpen(false)
@@ -155,6 +179,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
         endDateTime: "",
         maxEntrants: "",
         allowMultipleEntries: true,
+        seedPrizePool: "",
       })
       onSuccess?.()
     } catch (error: any) {
@@ -375,6 +400,38 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
             </p>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="seedPrizePool" className="text-white font-medium">
+              Seed Prize Pool (ETH) <span className="text-gray-400 text-xs">(Optional)</span>
+            </Label>
+            <Input
+              id="seedPrizePool"
+              type="number"
+              step="0.0001"
+              min="0"
+              max="1000"
+              placeholder="0.0"
+              value={formData.seedPrizePool}
+              onChange={(e) => {
+                const value = e.target.value
+                // Allow empty input for user experience
+                if (value === "") {
+                  setFormData({ ...formData, seedPrizePool: "" })
+                  return
+                }
+                const numValue = parseFloat(value)
+                // Validate: must be non-negative and finite
+                if (!isNaN(numValue) && numValue >= 0 && numValue <= 1000 && Number.isFinite(numValue)) {
+                  setFormData({ ...formData, seedPrizePool: value })
+                }
+              }}
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
+            <p className="text-sm text-gray-400">
+              Add an initial amount to the prize pool to kickstart your raffle. This ETH will be added to the pool and distributed to winners along with ticket purchases.
+            </p>
+          </div>
+
           <div className="flex items-start space-x-3 p-4 rounded-lg border border-white/20 bg-white/10">
             <Checkbox
               id="allowMultipleEntries"
@@ -397,10 +454,16 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
               size="lg"
             >
-              {isLoading ? "Creating..." : "Create Raffle"}
+              {isLoading 
+                ? "Creating..." 
+                : formData.seedPrizePool && parseFloat(formData.seedPrizePool) > 0
+                  ? `Create Raffle & Seed ${parseFloat(formData.seedPrizePool).toFixed(4)} ETH`
+                  : "Create Raffle"}
             </Button>
             <p className="text-sm text-gray-400 text-center">
-              This will create a transaction in your wallet for you to approve
+              {formData.seedPrizePool && parseFloat(formData.seedPrizePool) > 0
+                ? `This will create a transaction that includes ${parseFloat(formData.seedPrizePool).toFixed(4)} ETH to seed the prize pool. Please approve in your wallet.`
+                : "This will create a transaction in your wallet for you to approve"}
             </p>
           </div>
         </form>

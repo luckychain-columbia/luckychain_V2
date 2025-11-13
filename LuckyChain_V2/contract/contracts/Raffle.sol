@@ -48,7 +48,8 @@ contract Raffle {
         uint256 endTime,
         uint8 numWinners,
         uint16 creatorPct,
-        bool allowMultipleEntries
+        bool allowMultipleEntries,
+        uint256 seedAmount
     );
 
     event TicketsPurchased(
@@ -81,7 +82,7 @@ contract Raffle {
         uint16 _creatorPct,
         uint256 _maxTickets,
         bool _allowMultipleEntries
-    ) external returns (uint256) {
+    ) external payable returns (uint256) {
         require(bytes(_title).length > 0, "Empty title");
         require(bytes(_title).length <= 100, "Title too long");
         require(_ticketPrice > 0, "Ticket price must be > 0");
@@ -97,6 +98,9 @@ contract Raffle {
 
         uint256 raffleId = nextRaffleId++;
 
+        // Initialize total pool with any ETH sent with the transaction (seed amount)
+        uint256 seedAmount = msg.value;
+
         raffles[raffleId] = RaffleInfo({
             creator: msg.sender,
             title: _title,
@@ -107,7 +111,7 @@ contract Raffle {
             isActive: true,
             isCompleted: false,
             winner: address(0),
-            totalPool: 0
+            totalPool: seedAmount
         });
 
         raffleSettings[raffleId] = RaffleConfig({
@@ -125,7 +129,8 @@ contract Raffle {
             _endDateTime,
             _numWinners,
             _creatorPct,
-            _allowMultipleEntries
+            _allowMultipleEntries,
+            seedAmount
         );
 
         return raffleId;

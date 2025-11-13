@@ -212,6 +212,7 @@ const useContract = () => {
       creatorFeePct: number
       maxEntrants?: number | null
       allowMultipleEntries: boolean
+      seedPrizePool?: string
     }) => {
       if (!account) {
         throw new Error("Please connect your wallet to create raffles")
@@ -265,6 +266,53 @@ const useContract = () => {
       const creatorPctBasisPoints = Math.min(Math.max(Math.floor(params.creatorFeePct * 100), 0), 10_000)
       const maxTickets = params.maxEntrants && params.maxEntrants > 0 ? BigInt(params.maxEntrants) : BigInt(0)
 
+      // Validate and parse seed prize pool (optional)
+      let seedAmountWei = BigInt(0)
+      if (params.seedPrizePool !== undefined && params.seedPrizePool.trim().length > 0) {
+        const seedAmountNum = Number(params.seedPrizePool)
+        if (isNaN(seedAmountNum) || seedAmountNum < 0 || !Number.isFinite(seedAmountNum)) {
+          throw new Error("Seed prize pool must be a valid number greater than or equal to 0")
+        }
+        if (seedAmountNum > 1000) {
+          throw new Error("Seed prize pool cannot exceed 1000 ETH")
+        }
+        seedAmountWei = validateAndParseEther(params.seedPrizePool, "seed prize pool")
+      }
+
+      // Check balance if seeding prize pool
+      if (seedAmountWei > BigInt(0) && provider) {
+        try {
+          const balance = await provider.getBalance(account)
+          // Estimate gas cost (rough estimate: 200,000 gas * 20 gwei = 0.004 ETH)
+          const estimatedGasCost = ethers.parseEther("0.004") // 0.004 ETH for gas
+          const totalRequired = seedAmountWei + estimatedGasCost
+
+          if (balance < seedAmountWei) {
+            const balanceEth = Number(formatEther(balance))
+            const seedEth = Number(params.seedPrizePool)
+            throw new Error(
+              `Insufficient balance. You have ${balanceEth.toFixed(4)} ETH, but need ${seedEth.toFixed(4)} ETH to seed the prize pool`
+            )
+          }
+
+          // Warn if balance is close to required amount (might not have enough for gas)
+          if (balance < totalRequired && balance >= seedAmountWei) {
+            const balanceEth = Number(formatEther(balance))
+            const seedEth = Number(params.seedPrizePool)
+            console.warn(
+              `Warning: Balance (${balanceEth.toFixed(4)} ETH) may not cover gas fees. Required: ${seedEth.toFixed(4)} ETH + gas`
+            )
+            // Don't throw error - let transaction attempt, contract will reject if insufficient
+          }
+        } catch (balanceError: any) {
+          // If balance check fails, continue - contract will reject with better error
+          if (balanceError.message && balanceError.message.includes("Insufficient balance")) {
+            throw balanceError
+          }
+          console.warn("Balance check failed:", balanceError)
+        }
+      }
+
       try {
         // Validate and parse entry fee
         const entryFeeWei = validateAndParseEther(params.entryFee, "entry fee")
@@ -277,7 +325,10 @@ const useContract = () => {
           params.numWinners,
           creatorPctBasisPoints,
           maxTickets,
-          params.allowMultipleEntries
+          params.allowMultipleEntries,
+          {
+            value: seedAmountWei, // Send seed amount with transaction
+          }
         )
 
         // Wait for transaction with timeout
