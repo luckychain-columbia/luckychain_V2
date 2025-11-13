@@ -20,11 +20,13 @@ export function WalletConnect() {
   const [showWalletDialog, setShowWalletDialog] = useState(false)
 
   useEffect(() => {
-    // Check if a Web3 wallet is available
-    if (typeof window.ethereum === "undefined") {
+    // Only show warning if no wallet is installed AND no account is connected
+    if (typeof window.ethereum === "undefined" && !account) {
       setShowWarning(true)
+    } else {
+      setShowWarning(false)
     }
-  }, [])
+  }, [account])
 
   async function handleConnect() {
     try {
@@ -61,7 +63,7 @@ export function WalletConnect() {
 
   return (
     <>
-      <div className="flex flex-col items-end gap-3">
+      <div className="flex flex-col items-end gap-2">
         {account ? (
           <div className="flex items-center gap-2">
             <Button
@@ -81,23 +83,24 @@ export function WalletConnect() {
             </Button>
           </div>
         ) : (
-          <Button
-            onClick={handleConnect}
-            disabled={isConnecting}
-            className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
-          >
-            <Wallet className="mr-2 h-5 w-5" />
-            {isConnecting ? "Connecting..." : "Connect Wallet"}
-          </Button>
-        )}
-
-        {showWarning && !account && (
-          <Alert className="glass-strong glow-border border-destructive/50 max-w-sm shadow-lg">
-            <AlertCircle className="h-4 w-4 text-destructive" />
-            <AlertDescription className="text-xs leading-relaxed">
-              Install a Web3 wallet (like MetaMask) to interact with the blockchain. Currently viewing demo mode.
-            </AlertDescription>
-          </Alert>
+          <>
+            <Button
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+            >
+              <Wallet className="mr-2 h-5 w-5" />
+              {isConnecting ? "Connecting..." : "Connect Wallet"}
+            </Button>
+            {showWarning && typeof window.ethereum === "undefined" && (
+              <Alert className="glass-strong glow-border border-destructive/50 max-w-[220px] shadow-sm py-1 px-2 !grid-cols-[auto_1fr] !gap-x-1.5">
+                <AlertCircle className="h-2.5 w-2.5 text-destructive flex-shrink-0 !translate-y-0" />
+                <AlertDescription className="text-[10px] leading-tight text-muted-foreground !col-start-2">
+                  Install a Web3 wallet to interact with the blockchain. Currently viewing demo mode.
+                </AlertDescription>
+              </Alert>
+            )}
+          </>
         )}
       </div>
 
