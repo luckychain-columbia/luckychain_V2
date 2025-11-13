@@ -63,7 +63,7 @@ export function WalletConnect() {
 
   return (
     <>
-      <div className="flex flex-col items-end gap-2">
+      <div className="relative flex items-center">
         {account ? (
           <div className="flex items-center gap-2">
             <Button
@@ -93,12 +93,14 @@ export function WalletConnect() {
               {isConnecting ? "Connecting..." : "Connect Wallet"}
             </Button>
             {showWarning && typeof window.ethereum === "undefined" && (
-              <Alert className="glass-strong glow-border border-destructive/50 max-w-[220px] shadow-sm py-1 px-2 !grid-cols-[auto_1fr] !gap-x-1.5">
-                <AlertCircle className="h-2.5 w-2.5 text-destructive flex-shrink-0 !translate-y-0" />
-                <AlertDescription className="text-[10px] leading-tight text-muted-foreground !col-start-2">
-                  Install a Web3 wallet to interact with the blockchain. Currently viewing demo mode.
-                </AlertDescription>
-              </Alert>
+              <div className="absolute top-full right-0 mt-1.5 z-50">
+                <Alert className="glass-strong glow-border border-destructive/50 max-w-[180px] shadow-sm py-0.5 px-1.5 !grid-cols-[auto_1fr] !gap-x-1 text-[9px]">
+                  <AlertCircle className="h-2 w-2 text-destructive flex-shrink-0 !translate-y-0 mt-0.5" />
+                  <AlertDescription className="text-[9px] leading-tight text-muted-foreground !col-start-2 py-0.5">
+                    Install a Web3 wallet to interact with the blockchain. Currently viewing demo mode.
+                  </AlertDescription>
+                </Alert>
+              </div>
             )}
           </>
         )}
