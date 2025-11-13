@@ -63,7 +63,7 @@ export function WalletConnect() {
 
   return (
     <>
-      <div className="relative flex items-center">
+      <div className="relative flex items-center group">
         {account ? (
           <div className="flex items-center gap-2">
             <Button
@@ -87,17 +87,20 @@ export function WalletConnect() {
             <Button
               onClick={handleConnect}
               disabled={isConnecting}
-              className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+              className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 relative"
             >
               <Wallet className="mr-2 h-5 w-5" />
               {isConnecting ? "Connecting..." : "Connect Wallet"}
+              {showWarning && typeof window.ethereum === "undefined" && (
+                <div className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full border-2 border-black/90 animate-pulse" title="No Web3 wallet detected" />
+              )}
             </Button>
             {showWarning && typeof window.ethereum === "undefined" && (
-              <div className="absolute top-full right-0 mt-1.5 z-50">
-                <Alert className="glass-strong glow-border border-destructive/50 max-w-[180px] shadow-sm py-0.5 px-1.5 !grid-cols-[auto_1fr] !gap-x-1 text-[9px]">
-                  <AlertCircle className="h-2 w-2 text-destructive flex-shrink-0 !translate-y-0 mt-0.5" />
-                  <AlertDescription className="text-[9px] leading-tight text-muted-foreground !col-start-2 py-0.5">
-                    Install a Web3 wallet to interact with the blockchain. Currently viewing demo mode.
+              <div className="absolute top-full right-0 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                <Alert className="glass-strong glow-border border-destructive/50 max-w-[160px] shadow-lg py-1.5 px-2 text-[10px] !grid-cols-[auto_1fr] !gap-x-1.5 bg-black/95 backdrop-blur-sm rounded-lg">
+                  <AlertCircle className="h-2.5 w-2.5 text-destructive flex-shrink-0 !translate-y-0 mt-0.5" />
+                  <AlertDescription className="text-[10px] leading-tight text-muted-foreground !col-start-2 py-0">
+                    Install a Web3 wallet to interact with the blockchain.
                   </AlertDescription>
                 </Alert>
               </div>
