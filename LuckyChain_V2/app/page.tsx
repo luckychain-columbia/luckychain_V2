@@ -146,8 +146,8 @@ export default function Home() {
               Transparent Raffle
             </h1>
 
-            <div className="py-6">
-              <div className="relative overflow-hidden rounded-2xl h-32 max-w-4xl mx-auto shadow-[0_0_60px_rgba(168,85,247,0.6)]">
+            <div className="py-8 md:py-12">
+              <div className="relative overflow-hidden rounded-2xl h-32 md:h-40 max-w-4xl mx-auto shadow-[0_0_60px_rgba(168,85,247,0.6)] px-4 sm:px-6">
                 <div className="absolute inset-0">
                   <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-[#B57CF4]/70 liquid-blob" />
                   <div
@@ -163,8 +163,8 @@ export default function Home() {
                     style={{ animationDelay: "-15s" }}
                   />
                 </div>
-                <div className="relative z-10 flex items-center justify-center h-full">
-                  <h2 className="text-4xl md:text-5xl font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+                <div className="relative z-10 flex items-center justify-center h-full px-4 sm:px-6">
+                  <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
                     Decentralized
                   </h2>
                 </div>
