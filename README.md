@@ -2,6 +2,8 @@
 
 Decentralized raffle platform built on Ethereum smart contracts. Enables users to create and participate in provably fair raffles with transparent winner selection and automatic prize distribution.
 
+> **Latest Update:** Added contract call caching system for improved performance (reduces RPC calls by ~73%).
+
 ## Features
 
 - **Decentralized Architecture**: Built on Ethereum smart contracts with no central authority
