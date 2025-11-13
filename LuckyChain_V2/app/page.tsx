@@ -107,15 +107,15 @@ export default function Home() {
       </div>
 
       <section className="relative">
-        <div className="relative container mx-auto px-4 py-20">
-          <nav className="flex items-center justify-between mb-12 md:mb-20 flex-wrap gap-2 md:gap-0">
-            <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity">
-              <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/50 relative z-10">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-4 py-20 max-w-screen-xl">
+          <nav className="flex items-center justify-between mb-12 md:mb-20 flex-wrap gap-2 md:gap-0 min-w-0">
+            <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity flex-shrink-0 min-w-0">
+              <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/50 relative z-10 flex-shrink-0">
                 <Trophy className="h-5 w-5 md:h-8 md:w-8 text-white drop-shadow-lg" />
               </div>
-              <span className="text-xl md:text-3xl font-bold tracking-tight text-white relative z-10">LuckyChain</span>
+              <span className="text-xl md:text-3xl font-bold tracking-tight text-white relative z-10 truncate">LuckyChain</span>
             </Link>
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-4 flex-shrink-0 min-w-0">
               <Link href="/fyi">
                 <Button
                   variant="ghost"
@@ -146,7 +146,7 @@ export default function Home() {
               Transparent Raffle
             </h1>
 
-            <div className="py-6 -mx-4">
+            <div className="py-6">
               <div className="relative overflow-hidden rounded-2xl h-32 max-w-4xl mx-auto shadow-[0_0_60px_rgba(168,85,247,0.6)]">
                 <div className="absolute inset-0">
                   <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-[#B57CF4]/70 liquid-blob" />
@@ -215,7 +215,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-24 relative">
+      <section className="container mx-auto px-4 sm:px-6 lg:px-4 py-24 relative max-w-screen-xl">
         <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-center justify-between mb-10">
             <div>
