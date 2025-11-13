@@ -6,12 +6,20 @@ import { BrowserProvider } from "ethers"
 // Web3 Context for wallet connection management
 // Based on old version structure with improvements
 
+interface WalletProvider {
+  provider: any
+  name: string
+  icon?: string
+}
+
 interface Web3ContextType {
   account: string | null // The user's wallet address (e.g., "0x123...")
   connectWallet: () => Promise<void> // Function to connect to a Web3 wallet
   disconnectWallet: () => void // Function to disconnect wallet
   provider: BrowserProvider | null // The ethers.js provider to interact with blockchain
   isConnecting: boolean // Loading state for connection
+  availableWallets: WalletProvider[] // List of available wallet providers
+  selectWallet: (wallet: WalletProvider) => Promise<void> // Function to select a specific wallet
 }
 
 const Web3Context = createContext<Web3ContextType>({
@@ -20,32 +28,116 @@ const Web3Context = createContext<Web3ContextType>({
   disconnectWallet: () => {},
   provider: null,
   isConnecting: false,
+  availableWallets: [],
+  selectWallet: async () => {},
 })
 
 // Custom hook to use this context easily in other components
 export const useWeb3 = () => useContext(Web3Context)
 
+// Helper function to detect available wallet providers
+function detectWallets(): WalletProvider[] {
+  const wallets: WalletProvider[] = []
+
+  if (typeof window === "undefined") {
+    return wallets
+  }
+
+  // Check for window.ethereum (EIP-1193 standard)
+  if (window.ethereum) {
+    // Check if it's an array of providers (multiple wallets)
+    if (Array.isArray(window.ethereum.providers)) {
+      window.ethereum.providers.forEach((provider: any) => {
+        const name = getWalletName(provider)
+        if (name) {
+          wallets.push({ provider, name })
+        }
+      })
+    } else {
+      // Single provider - check which wallet it is
+      const name = getWalletName(window.ethereum)
+      if (name) {
+        wallets.push({ provider: window.ethereum, name })
+      } else {
+        // Unknown provider, but still valid
+        wallets.push({ provider: window.ethereum, name: "Web3 Wallet" })
+      }
+    }
+  }
+
+  return wallets
+}
+
+// Helper function to identify wallet by provider properties
+function getWalletName(provider: any): string | null {
+  if (!provider) return null
+
+  // Check for MetaMask
+  if (provider.isMetaMask && !provider.isBraveWallet) {
+    return "MetaMask"
+  }
+
+  // Check for Coinbase Wallet
+  if (provider.isCoinbaseWallet) {
+    return "Coinbase Wallet"
+  }
+
+  // Check for Brave Wallet
+  if (provider.isBraveWallet) {
+    return "Brave Wallet"
+  }
+
+  // Check for Trust Wallet
+  if (provider.isTrust) {
+    return "Trust Wallet"
+  }
+
+  // Check for Rainbow Wallet
+  if (provider.isRainbow) {
+    return "Rainbow Wallet"
+  }
+
+  // Check for Phantom (Ethereum)
+  if (provider.isPhantom) {
+    return "Phantom"
+  }
+
+  // Generic Web3 provider
+  if (provider.request && typeof provider.request === "function") {
+    return "Web3 Wallet"
+  }
+
+  return null
+}
+
 export function Web3Provider({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<string | null>(null)
   const [provider, setProvider] = useState<BrowserProvider | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [availableWallets, setAvailableWallets] = useState<WalletProvider[]>([])
+  const [selectedProvider, setSelectedProvider] = useState<any>(null)
 
-  // Function to connect to a Web3 wallet
-  const connectWallet = async () => {
+  // Detect available wallets on mount
+  useEffect(() => {
+    const wallets = detectWallets()
+    setAvailableWallets(wallets)
+    
+    // If only one wallet, auto-select it
+    if (wallets.length === 1) {
+      setSelectedProvider(wallets[0].provider)
+    } else if (wallets.length > 1 && window.ethereum && !Array.isArray(window.ethereum.providers)) {
+      // Multiple wallets but window.ethereum is not an array - use the default one
+      setSelectedProvider(window.ethereum)
+    }
+  }, [])
+
+  // Function to connect using a specific provider
+  const connectWithProvider = async (ethereumProvider: any) => {
     try {
       setIsConnecting(true)
-      
-      // Check if a Web3 wallet is installed (it injects "ethereum" into window)
-      if (typeof window.ethereum === "undefined") {
-        alert("Please install a Web3 wallet (like MetaMask) to use LuckyChain!")
-        return
-      }
 
-      // Optional: Switch network (commented out - uncomment if needed)
-      // await switchNetwork()
-
-      // Request account access. The wallet will prompt the user (asks them to unlock if needed).
-      const accounts: string[] = await window.ethereum.request({
+      // Request account access
+      const accounts: string[] = await ethereumProvider.request({
         method: "eth_requestAccounts",
       })
 
@@ -58,10 +150,11 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
         throw new Error("Received an invalid account from the wallet provider.")
       }
 
-      const browserProvider = new BrowserProvider(window.ethereum)
+      const browserProvider = new BrowserProvider(ethereumProvider)
 
       setAccount(firstAccount)
       setProvider(browserProvider)
+      setSelectedProvider(ethereumProvider)
 
       console.log("Connected to wallet:", firstAccount)
     } catch (error) {
@@ -73,8 +166,35 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
       }
       setAccount(null)
       setProvider(null)
+      throw error
     } finally {
       setIsConnecting(false)
+    }
+  }
+
+  // Function to select a specific wallet
+  const selectWallet = async (wallet: WalletProvider) => {
+    await connectWithProvider(wallet.provider)
+  }
+
+  // Function to connect to a Web3 wallet
+  const connectWallet = async () => {
+    try {
+      setIsConnecting(true)
+      
+      // Check if any Web3 wallet is installed
+      if (typeof window.ethereum === "undefined") {
+        alert("Please install a Web3 wallet (like MetaMask) to use LuckyChain!")
+        return
+      }
+
+      // If multiple wallets detected, we'll show a selection dialog
+      // For now, use the selected provider or default to window.ethereum
+      const providerToUse = selectedProvider || window.ethereum
+
+      await connectWithProvider(providerToUse)
+    } catch (error) {
+      // Error handling is done in connectWithProvider
     }
   }
 
@@ -126,14 +246,17 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 
       // Listen for account changes (when user switches accounts in their wallet)
   useEffect(() => {
-    if (typeof window.ethereum !== "undefined") {
+    const ethereumProvider = selectedProvider || window.ethereum
+    
+    if (typeof ethereumProvider !== "undefined" && ethereumProvider) {
       const applyAccounts = async (accounts: string[]) => {
         if (accounts.length === 0) {
           disconnectWallet()
           return
         }
 
-        const isUnlockedFn = window.ethereum._metamask?.isUnlocked
+        // Check if wallet is unlocked (MetaMask specific check)
+        const isUnlockedFn = ethereumProvider._metamask?.isUnlocked
         if (typeof isUnlockedFn === "function") {
           const unlocked = await isUnlockedFn()
           if (!unlocked) {
@@ -143,18 +266,18 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
         }
 
         setAccount(accounts[0])
-        setProvider(new BrowserProvider(window.ethereum))
+        setProvider(new BrowserProvider(ethereumProvider))
       }
 
       const handleAccountsChanged = (accounts: string[]) => {
         void applyAccounts(accounts)
       }
 
-      window.ethereum.on("accountsChanged", handleAccountsChanged)
+      ethereumProvider.on("accountsChanged", handleAccountsChanged)
 
       const syncAccounts = async () => {
         try {
-          const accounts: string[] = await window.ethereum.request({
+          const accounts: string[] = await ethereumProvider.request({
             method: "eth_accounts",
           })
           await applyAccounts(accounts)
@@ -168,16 +291,24 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 
       // Cleanup listener when component unmounts
       return () => {
-        if (typeof window.ethereum !== "undefined") {
-          window.ethereum.removeAllListeners("accountsChanged")
+        if (ethereumProvider && typeof ethereumProvider.removeAllListeners === "function") {
+          ethereumProvider.removeAllListeners("accountsChanged")
         }
       }
     }
-  }, [])
+  }, [selectedProvider])
 
   return (
     <Web3Context.Provider
-      value={{ account, connectWallet, disconnectWallet, provider, isConnecting }}
+      value={{ 
+        account, 
+        connectWallet, 
+        disconnectWallet, 
+        provider, 
+        isConnecting,
+        availableWallets,
+        selectWallet
+      }}
     >
       {children}
     </Web3Context.Provider>
