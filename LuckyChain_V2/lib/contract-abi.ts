@@ -1,13 +1,13 @@
 // Auto-generated from Hardhat compilation
 // Run "npm run export:abi" after compiling contracts
-export const LOTTERY_ABI = [
+export const RAFFLE_ABI = [
   {
     "anonymous": false,
     "inputs": [
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "lotteryId",
+        "name": "raffleId",
         "type": "uint256"
       },
       {
@@ -59,7 +59,7 @@ export const LOTTERY_ABI = [
         "type": "bool"
       }
     ],
-    "name": "LotteryCreated",
+    "name": "RaffleCreated",
     "type": "event"
   },
   {
@@ -68,7 +68,7 @@ export const LOTTERY_ABI = [
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "lotteryId",
+        "name": "raffleId",
         "type": "uint256"
       },
       {
@@ -99,7 +99,7 @@ export const LOTTERY_ABI = [
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "lotteryId",
+        "name": "raffleId",
         "type": "uint256"
       },
       {
@@ -119,10 +119,35 @@ export const LOTTERY_ABI = [
         "internalType": "uint256",
         "name": "creatorReward",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "finalizationReward",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "finalizer",
+        "type": "address"
       }
     ],
     "name": "WinnersSelected",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "FINALIZATION_REWARD_BPS",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -138,10 +163,36 @@ export const LOTTERY_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "MAX_FINALIZATION_REWARD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MIN_FINALIZATION_REWARD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_lotteryId",
+        "name": "_raffleId",
         "type": "uint256"
       }
     ],
@@ -154,7 +205,7 @@ export const LOTTERY_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_lotteryId",
+        "name": "_raffleId",
         "type": "uint256"
       },
       {
@@ -211,7 +262,7 @@ export const LOTTERY_ABI = [
         "type": "bool"
       }
     ],
-    "name": "createLottery",
+    "name": "createRaffle",
     "outputs": [
       {
         "internalType": "uint256",
@@ -226,11 +277,11 @@ export const LOTTERY_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_lotteryId",
+        "name": "_raffleId",
         "type": "uint256"
       }
     ],
-    "name": "endLottery",
+    "name": "endRaffle",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -239,16 +290,79 @@ export const LOTTERY_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "start",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "count",
+        "name": "_raffleId",
         "type": "uint256"
       }
     ],
-    "name": "getLotteries",
+    "name": "finalizeRaffle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_raffleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getParticipants",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_raffleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRaffleConfig",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "numWinners",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint16",
+            "name": "creatorPct",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "allowMultipleEntries",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Raffle.RaffleConfig",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_raffleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRaffleInfo",
     "outputs": [
       {
         "components": [
@@ -303,7 +417,83 @@ export const LOTTERY_ABI = [
             "type": "uint256"
           }
         ],
-        "internalType": "struct Lottery.LotteryInfo[]",
+        "internalType": "struct Raffle.RaffleInfo",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "start",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "name": "getRaffles",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ticketPrice",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxTickets",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "endTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isActive",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isCompleted",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "winner",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalPool",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Raffle.RaffleInfo[]",
         "name": "infos",
         "type": "tuple[]"
       },
@@ -325,7 +515,7 @@ export const LOTTERY_ABI = [
             "type": "bool"
           }
         ],
-        "internalType": "struct Lottery.LotteryConfig[]",
+        "internalType": "struct Raffle.RaffleConfig[]",
         "name": "configs",
         "type": "tuple[]"
       }
@@ -337,133 +527,7 @@ export const LOTTERY_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_lotteryId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getLotteryConfig",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint8",
-            "name": "numWinners",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint16",
-            "name": "creatorPct",
-            "type": "uint16"
-          },
-          {
-            "internalType": "bool",
-            "name": "allowMultipleEntries",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct Lottery.LotteryConfig",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_lotteryId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getLotteryInfo",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "title",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "ticketPrice",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "maxTickets",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "endTime",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isActive",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "isCompleted",
-            "type": "bool"
-          },
-          {
-            "internalType": "address",
-            "name": "winner",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalPool",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct Lottery.LotteryInfo",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_lotteryId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getParticipants",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_lotteryId",
+        "name": "_raffleId",
         "type": "uint256"
       },
       {
@@ -487,7 +551,7 @@ export const LOTTERY_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_lotteryId",
+        "name": "_raffleId",
         "type": "uint256"
       }
     ],
@@ -504,7 +568,7 @@ export const LOTTERY_ABI = [
   },
   {
     "inputs": [],
-    "name": "lotteryCount",
+    "name": "nextRaffleId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -517,7 +581,7 @@ export const LOTTERY_ABI = [
   },
   {
     "inputs": [],
-    "name": "nextLotteryId",
+    "name": "raffleCount",
     "outputs": [
       {
         "internalType": "uint256",
@@ -532,7 +596,7 @@ export const LOTTERY_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_lotteryId",
+        "name": "_raffleId",
         "type": "uint256"
       }
     ],

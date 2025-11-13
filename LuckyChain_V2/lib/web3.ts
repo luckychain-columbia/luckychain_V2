@@ -4,29 +4,29 @@ import { ethers } from "ethers"
 import { useEffect, useState } from "react"
 
 // Contract ABI (simplified for demo)
-export const LOTTERY_ABI = [
-  "function createLottery(string _title, string _description, uint256 _ticketPrice, uint256 _endDateTime, uint8 _numWinners, uint16 _creatorPct, uint256 _maxTickets, bool _allowMultipleEntries) external returns (uint256)",
-  "function buyTicket(uint256 _lotteryId) external payable",
-  "function buyTickets(uint256 _lotteryId, uint256 _ticketCount) external payable",
-  "function selectWinner(uint256 _lotteryId) external",
-  "function endLottery(uint256 _lotteryId) external",
-  "function getLotteryInfo(uint256 _lotteryId) external view returns (tuple(address creator, string title, string description, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, bool isActive, bool isCompleted, address winner, uint256 totalPool))",
-  "function getLotteryConfig(uint256 _lotteryId) external view returns (tuple(uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries))",
-  "function getParticipants(uint256 _lotteryId) external view returns (address[] memory)",
-  "function getUserTickets(uint256 _lotteryId, address _user) external view returns (uint256[] memory)",
-  "function getWinners(uint256 _lotteryId) external view returns (address[] memory)",
-  "function getLotteries(uint256 start, uint256 count) external view returns (tuple(address creator, string title, string description, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, bool isActive, bool isCompleted, address winner, uint256 totalPool)[], tuple(uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries)[])",
-  "function lotteryCount() external view returns (uint256)",
-  "event LotteryCreated(uint256 indexed lotteryId, address indexed creator, string title, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries)",
-  "event TicketsPurchased(uint256 indexed lotteryId, address indexed participant, uint256[] ticketNumbers, uint256 amountPaid)",
-  "event WinnersSelected(uint256 indexed lotteryId, address[] winners, uint256 prizePerWinner, uint256 creatorReward)",
+export const RAFFLE_ABI = [
+  "function createRaffle(string _title, string _description, uint256 _ticketPrice, uint256 _endDateTime, uint8 _numWinners, uint16 _creatorPct, uint256 _maxTickets, bool _allowMultipleEntries) external returns (uint256)",
+  "function buyTicket(uint256 _raffleId) external payable",
+  "function buyTickets(uint256 _raffleId, uint256 _ticketCount) external payable",
+  "function selectWinner(uint256 _raffleId) external",
+  "function endRaffle(uint256 _raffleId) external",
+  "function getRaffleInfo(uint256 _raffleId) external view returns (tuple(address creator, string title, string description, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, bool isActive, bool isCompleted, address winner, uint256 totalPool))",
+  "function getRaffleConfig(uint256 _raffleId) external view returns (tuple(uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries))",
+  "function getParticipants(uint256 _raffleId) external view returns (address[] memory)",
+  "function getUserTickets(uint256 _raffleId, address _user) external view returns (uint256[] memory)",
+  "function getWinners(uint256 _raffleId) external view returns (address[] memory)",
+  "function getRaffles(uint256 start, uint256 count) external view returns (tuple(address creator, string title, string description, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, bool isActive, bool isCompleted, address winner, uint256 totalPool)[], tuple(uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries)[])",
+  "function raffleCount() external view returns (uint256)",
+  "event RaffleCreated(uint256 indexed raffleId, address indexed creator, string title, uint256 ticketPrice, uint256 maxTickets, uint256 endTime, uint8 numWinners, uint16 creatorPct, bool allowMultipleEntries)",
+  "event TicketsPurchased(uint256 indexed raffleId, address indexed participant, uint256[] ticketNumbers, uint256 amountPaid)",
+  "event WinnersSelected(uint256 indexed raffleId, address[] winners, uint256 prizePerWinner, uint256 creatorReward)",
 ]
 
 // For demo purposes - in production, deploy to testnet/mainnet
-export const LOTTERY_CONTRACT_ADDRESS =
-  process.env.NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000"
+export const RAFFLE_CONTRACT_ADDRESS =
+  process.env.NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000"
 
-export interface LotteryData {
+export interface RaffleData {
   creator: string
   title: string
   description: string
@@ -44,7 +44,7 @@ export function isWeb3Available(): boolean {
 }
 
 export function isContractDeployed(): boolean {
-  return LOTTERY_CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000"
+  return RAFFLE_CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000"
 }
 
 export async function getProvider() {
@@ -61,7 +61,7 @@ export async function getSigner() {
 
 export async function getContract() {
   const signer = await getSigner()
-  return new ethers.Contract(LOTTERY_CONTRACT_ADDRESS, LOTTERY_ABI, signer)
+  return new ethers.Contract(RAFFLE_CONTRACT_ADDRESS, RAFFLE_ABI, signer)
 }
 
 export async function connectWallet() {

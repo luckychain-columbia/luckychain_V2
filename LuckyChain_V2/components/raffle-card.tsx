@@ -4,90 +4,177 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import type { ContractLottery } from "@/app/services/contract"
+import type { ContractRaffle } from "@/app/services/contract"
 import { formatEther, shortenAddress } from "@/app/utils"
 import { Clock, Users, Trophy, Coins } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback, memo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import useContract from "@/app/services/contract"
 import { useWeb3 } from "@/app/context/Web3Context"
 
-interface LotteryCardProps {
-  lottery: ContractLottery
+interface RaffleCardProps {
+  raffle: ContractRaffle
   onUpdate?: () => void
 }
 
-export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
+export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [participants, setParticipants] = useState<string[]>([])
-  const [winners, setWinners] = useState<string[]>(lottery.winners ?? [])
+  const [winners, setWinners] = useState<string[]>(raffle.winners ?? [])
   const [ticketCount, setTicketCount] = useState<number>(1)
   const { toast } = useToast()
   const { buyTicket, getParticipants, getWinners, selectWinner } = useContract()
   const { account } = useWeb3()
-  const allowMultipleEntries = lottery.allowMultipleEntries ?? false
-  const isCreator = account && lottery.creator?.toLowerCase() === account.toLowerCase()
+  const allowMultipleEntries = raffle.allowMultipleEntries ?? false
+  const isCreator = account && raffle.creator?.toLowerCase() === account.toLowerCase()
+
+  const loadParticipants = useCallback(async () => {
+    try {
+      const parts = await getParticipants(raffle.id)
+      setParticipants(parts)
+    } catch (error) {
+      console.error("Failed to load participants:", error)
+    }
+  }, [raffle.id, getParticipants])
+
+  const loadWinners = useCallback(async () => {
+    if (!raffle.isCompleted) {
+      setWinners([])
+      return
+    }
+
+    if (raffle.winners && raffle.winners.length > 0) {
+      setWinners(raffle.winners)
+      return
+    }
+
+    try {
+      const fetched = await getWinners(raffle.id)
+      setWinners(fetched)
+    } catch (error) {
+      console.warn("Failed to load winners:", error)
+    }
+  }, [raffle.id, raffle.isCompleted, raffle.winners, getWinners])
 
   useEffect(() => {
     loadParticipants()
-  }, [lottery.id])
+  }, [loadParticipants])
 
   useEffect(() => {
-    setWinners(lottery.winners ?? [])
+    setWinners(raffle.winners ?? [])
 
-    if (lottery.isCompleted) {
+    if (raffle.isCompleted) {
       void loadWinners()
     }
-  }, [lottery.id, lottery.isCompleted, lottery.winners])
+  }, [raffle.winners, raffle.isCompleted, loadWinners])
 
   useEffect(() => {
     if (!allowMultipleEntries) {
       setTicketCount(1)
     }
-  }, [lottery.id, allowMultipleEntries])
+  }, [allowMultipleEntries])
 
-  // Calculate time remaining with proper edge case handling
-  const endTimestamp = Number(lottery.endTime ?? 0)
-  const nowSeconds = Math.floor(Date.now() / 1000)
-  const hasEnded = endTimestamp > 0 && endTimestamp <= nowSeconds
-  const endDate = endTimestamp > 0 ? new Date(endTimestamp * 1000) : new Date()
-  const now = new Date()
-  const timeLeft = Math.max(0, endDate.getTime() - now.getTime())
-  const daysLeft = Math.floor(timeLeft / (1000 * 60 * 60 * 24))
-  const hoursLeft = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  // Memoize time calculations to avoid recalculating on every render
+  const timeData = useMemo(() => {
+    const endTimestamp = Number(raffle.endTime ?? 0)
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    const hasEnded = endTimestamp > 0 && endTimestamp <= nowSeconds
+    const endDate = endTimestamp > 0 && endTimestamp < Number.MAX_SAFE_INTEGER / 1000 
+      ? new Date(endTimestamp * 1000) 
+      : new Date(Date.now() + 86400000) // Default to 1 day from now if invalid
+    const now = new Date()
+    const timeLeft = Math.max(0, Math.min(endDate.getTime() - now.getTime(), Number.MAX_SAFE_INTEGER))
+    const daysLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60 * 24)))
+    const hoursLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
+    const isActuallyEnded = raffle.isCompleted || hasEnded || timeLeft <= 0
+    
+    return { hasEnded, daysLeft, hoursLeft, isActuallyEnded, timeLeft }
+  }, [raffle.endTime, raffle.isCompleted])
+
+  const { hasEnded, daysLeft, hoursLeft, isActuallyEnded, timeLeft } = timeData
+
+  // Memoize expensive calculations
+  const raffleCalculations = useMemo(() => {
+    const ticketsSold = Math.max(0, participants.length)
+    const maxTicketsNumber = Math.max(0, Number(raffle.maxTickets ?? 0))
+    const maxTicketsReached = maxTicketsNumber > 0 && ticketsSold >= maxTicketsNumber
+    const canFinalize = !raffle.isCompleted && participants.length > 0 && (hasEnded || (maxTicketsReached && isCreator))
+    const poolEth = Math.max(0, Number(formatEther(raffle.totalPool ?? BigInt(0))))
+    const rewardFromPool = (poolEth * 0.1) / 100 // 0.1% of pool
+    const calculatedReward = rewardFromPool > 0.001 ? rewardFromPool : 0.001
+    const finalizationRewardEth = Math.min(0.01, Math.max(0.001, calculatedReward))
+    const actualReward = Math.min(finalizationRewardEth, poolEth)
+    const progress =
+      maxTicketsNumber > 0
+        ? Math.min(100, Math.max(0, (ticketsSold / maxTicketsNumber) * 100))
+        : participants.length > 0
+          ? 100
+          : 0
+    const rawCreatorPct = raffle.creatorPct ?? 0
+    const creatorFeePercent =
+      typeof rawCreatorPct === "number"
+        ? rawCreatorPct > 100
+          ? rawCreatorPct / 100 // Convert basis points to percentage
+          : rawCreatorPct
+        : 0
+    const numWinners = Math.max(1, raffle.numWinners ?? 1)
+    const ticketsRemaining =
+      maxTicketsNumber > 0
+        ? Math.max(0, maxTicketsNumber - ticketsSold)
+        : undefined
+    
+    return {
+      ticketsSold,
+      maxTicketsNumber,
+      maxTicketsReached,
+      canFinalize,
+      actualReward,
+      progress,
+      creatorFeePercent,
+      numWinners,
+      ticketsRemaining,
+    }
+  }, [participants, raffle.maxTickets, raffle.isCompleted, raffle.totalPool, raffle.creatorPct, raffle.numWinners, hasEnded, isCreator])
+
+  const {
+    ticketsSold,
+    maxTicketsNumber,
+    maxTicketsReached,
+    canFinalize,
+    actualReward,
+    progress,
+    creatorFeePercent,
+    numWinners,
+    ticketsRemaining,
+  } = raffleCalculations
+
+  // Memoize derived values that depend on ticketCount
+  const desiredTicketCount = useMemo(
+    () => allowMultipleEntries ? ticketCount : 1,
+    [allowMultipleEntries, ticketCount]
+  )
   
-  // Determine if lottery should be considered ended (even if not finalized)
-  const isActuallyEnded = lottery.isCompleted || hasEnded || timeLeft <= 0
+  const capacityReached = useMemo(
+    () => ticketsRemaining !== undefined ? ticketsRemaining === 0 : false,
+    [ticketsRemaining]
+  )
+  
+  const exceedsCapacity = useMemo(
+    () => ticketsRemaining !== undefined ? desiredTicketCount > ticketsRemaining : false,
+    [ticketsRemaining, desiredTicketCount]
+  )
+  
+  const invalidTicketCount = useMemo(
+    () => desiredTicketCount < 1,
+    [desiredTicketCount]
+  )
 
-  async function loadParticipants() {
-    try {
-      const parts = await getParticipants(lottery.id)
-      setParticipants(parts)
-    } catch (error) {
-      console.error("Failed to load participants:", error)
-    }
-  }
-
-  async function loadWinners() {
-    if (!lottery.isCompleted) {
-      setWinners([])
+  const handleBuyTicket = useCallback(async () => {
+    // Prevent multiple simultaneous transactions
+    if (isLoading) {
       return
     }
 
-    if (lottery.winners && lottery.winners.length > 0) {
-      setWinners(lottery.winners)
-      return
-    }
-
-    try {
-      const fetched = await getWinners(lottery.id)
-      setWinners(fetched)
-    } catch (error) {
-      console.warn("Failed to load winners:", error)
-    }
-  }
-
-  async function handleBuyTicket() {
     if (!account) {
       toast({
         title: "Wallet Required",
@@ -97,12 +184,12 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
       return
     }
 
-    if (!lottery.isActive || isActuallyEnded) {
+    if (!raffle.isActive || isActuallyEnded) {
       toast({
-        title: "Lottery Ended",
-        description: hasEnded && !lottery.isCompleted
-          ? "This lottery has expired. Winners have not been selected yet."
-          : "This lottery is no longer active",
+        title: "Raffle Ended",
+        description: hasEnded && !raffle.isCompleted
+          ? "This raffle has expired. Winners have not been selected yet."
+          : "This raffle is no longer active",
         variant: "destructive",
       })
       return
@@ -119,8 +206,8 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
 
     if (capacityReached) {
       toast({
-        title: "Lottery Full",
-        description: "All tickets for this lottery have been sold",
+        title: "Raffle Full",
+        description: "All tickets for this raffle have been sold",
         variant: "destructive",
       })
       return
@@ -137,12 +224,12 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
 
     setIsLoading(true)
     try {
-      const ticketPriceEth = Number(formatEther(lottery.ticketPrice))
+      const ticketPriceEth = Number(formatEther(raffle.ticketPrice))
       if (ticketPriceEth <= 0 || !Number.isFinite(ticketPriceEth)) {
         throw new Error("Invalid ticket price")
       }
 
-      await buyTicket(lottery.id, ticketPriceEth, desiredTicketCount)
+      await buyTicket(raffle.id, ticketPriceEth, desiredTicketCount)
       toast({
         title: "Success!",
         description:
@@ -151,26 +238,60 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
             : "Ticket purchased successfully",
       })
       
-      // Refresh data
+      // Refresh data - cache will be invalidated by buyTicket function
       await Promise.all([loadParticipants(), loadWinners()])
       onUpdate?.()
       setTicketCount(1)
     } catch (error: any) {
+      // Extract user-friendly error message
+      let errorMessage = "Failed to purchase ticket"
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (error?.reason) {
+        errorMessage = error.reason
+      } else if (typeof error === "string") {
+        errorMessage = error
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to purchase ticket",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [
+    isLoading,
+    account,
+    raffle.isActive,
+    isActuallyEnded,
+    hasEnded,
+    raffle.isCompleted,
+    invalidTicketCount,
+    desiredTicketCount,
+    capacityReached,
+    exceedsCapacity,
+    ticketsRemaining,
+    raffle.id,
+    raffle.ticketPrice,
+    buyTicket,
+    loadParticipants,
+    loadWinners,
+    onUpdate,
+    toast,
+  ])
 
-  async function handleFinalizeLottery() {
+  const handleFinalizeRaffle = useCallback(async () => {
+    // Prevent multiple simultaneous transactions
+    if (isLoading) {
+      return
+    }
+
     if (!account) {
       toast({
         title: "Wallet Required",
-        description: "Please connect your wallet to finalize the lottery",
+        description: "Please connect your wallet to finalize the raffle",
         variant: "destructive",
       })
       return
@@ -179,17 +300,17 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
     if (participants.length === 0) {
       toast({
         title: "No Participants",
-        description: "Cannot finalize a lottery with no participants",
+        description: "Cannot finalize a raffle with no participants",
         variant: "destructive",
       })
       return
     }
 
-    // Check authorization based on lottery state
+    // Check authorization based on raffle state
     if (!hasEnded && maxTicketsReached && !isCreator) {
       toast({
         title: "Unauthorized",
-        description: "Only the lottery creator can finalize early when max tickets are reached",
+        description: "Only the raffle creator can finalize early when max tickets are reached",
         variant: "destructive",
       })
       return
@@ -197,71 +318,54 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
 
     setIsLoading(true)
     try {
-      await selectWinner(lottery.id)
+      await selectWinner(raffle.id)
       toast({
         title: "Success!",
-        description: "Lottery finalized and winners selected",
+        description: "Raffle finalized and winners selected",
       })
       
-      // Refresh data
+      // Refresh data - cache will be invalidated by selectWinner function
       await Promise.all([loadParticipants(), loadWinners()])
       onUpdate?.()
     } catch (error: any) {
+      // Extract user-friendly error message
+      let errorMessage = "Failed to finalize raffle"
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (error?.reason) {
+        errorMessage = error.reason
+      } else if (typeof error === "string") {
+        errorMessage = error
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to finalize lottery",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [
+    isLoading,
+    account,
+    participants.length,
+    hasEnded,
+    maxTicketsReached,
+    isCreator,
+    raffle.id,
+    selectWinner,
+    loadParticipants,
+    loadWinners,
+    onUpdate,
+    toast,
+  ])
 
-  const ticketsSold = participants.length
-  const maxTicketsNumber = Number(lottery.maxTickets)
-  const maxTicketsReached = maxTicketsNumber > 0 && ticketsSold >= maxTicketsNumber
-  // Anyone can finalize expired lotteries, but only creator can finalize early when max tickets reached
-  const canFinalize = !lottery.isCompleted && participants.length > 0 && (hasEnded || (maxTicketsReached && isCreator))
-  
-  // Calculate finalization reward (only for expired lotteries)
-  // Reward = min(max(0.1% of pool, 0.001 ETH), 0.01 ETH)
-  // This covers gas costs and incentivizes finalization
-  const poolEth = Number(formatEther(lottery.totalPool))
-  const rewardFromPool = (poolEth * 0.1) / 100 // 0.1% of pool
-  const calculatedReward = rewardFromPool > 0.001 ? rewardFromPool : 0.001
-  const finalizationRewardEth = calculatedReward > 0.01 ? 0.01 : calculatedReward
-  // Cap at pool size to avoid taking more than available
-  const actualReward = finalizationRewardEth > poolEth ? poolEth : finalizationRewardEth
-  
-  const progress =
-    maxTicketsNumber > 0
-      ? Math.min(100, (ticketsSold / maxTicketsNumber) * 100)
-      : participants.length > 0
-        ? 100
-        : 0
-  // Normalize creator fee percentage (contract uses basis points, frontend uses percentage)
-  const rawCreatorPct = lottery.creatorPct ?? 0
-  const creatorFeePercent =
-    typeof rawCreatorPct === "number"
-      ? rawCreatorPct > 100
-        ? rawCreatorPct / 100 // Convert basis points to percentage
-        : rawCreatorPct
-      : 0
-  const numWinners = Math.max(1, lottery.numWinners ?? 1)
-  const winnersToDisplay =
-    winners.length > 0 ? winners : (lottery.winners ?? [])
-  const ticketsRemaining =
-    maxTicketsNumber > 0
-      ? Math.max(0, maxTicketsNumber - ticketsSold)
-      : undefined
-  const desiredTicketCount = allowMultipleEntries ? ticketCount : 1
-  const capacityReached =
-    ticketsRemaining !== undefined ? ticketsRemaining === 0 : false
-  const exceedsCapacity =
-    ticketsRemaining !== undefined
-      ? desiredTicketCount > ticketsRemaining
-      : false
-  const invalidTicketCount = desiredTicketCount < 1
+  // Memoize derived values
+  const winnersToDisplay = useMemo(
+    () => winners.length > 0 ? winners : (raffle.winners ?? []),
+    [winners, raffle.winners]
+  )
 
   return (
     <Card className="glass-strong glow-border overflow-hidden border-0 shadow-2xl hover:shadow-primary/20 hover:scale-[1.02] transition-all duration-300 group h-full flex flex-col">
@@ -272,9 +376,9 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
             {isActuallyEnded ? (
               <Badge variant="secondary" className="glass shadow-lg text-gray-400">
                 <Trophy className="mr-1.5 h-3.5 w-3.5" />
-                {lottery.isCompleted ? "Ended" : "Expired"}
+                {raffle.isCompleted ? "Ended" : "Expired"}
               </Badge>
-            ) : lottery.isActive ? (
+            ) : raffle.isActive ? (
               <Badge className="glass bg-primary/30 text-primary border-primary/50 shadow-lg shadow-primary/30">
                 <Clock className="mr-1.5 h-3.5 w-3.5" />
                 Active
@@ -289,10 +393,10 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
           {/* Title + Description */}
           <div className="space-y-2">
             <h3 className="text-2xl font-semibold tracking-tight text-foreground truncate">
-              {lottery.title}
+              {raffle.title}
             </h3>
             <p className="text-sm text-muted-foreground text-pretty leading-relaxed line-clamp-3 h-[4.5rem]">
-              {lottery.description}
+              {raffle.description}
             </p>
           </div>
         </div>
@@ -325,7 +429,7 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
               Ticket Price
             </div>
             <div className="text-xl font-bold text-primary mt-auto">
-              {formatEther(lottery.ticketPrice)} ETH
+              {formatEther(raffle.ticketPrice)} ETH
             </div>
           </div>
 
@@ -335,12 +439,12 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
               Prize Pool
             </div>
             <div className="text-xl font-bold text-secondary mt-auto">
-              {formatEther(lottery.totalPool)} ETH
+              {formatEther(raffle.totalPool)} ETH
             </div>
           </div>
         </div>
 
-        {lottery.isActive && !isActuallyEnded && (
+        {raffle.isActive && !isActuallyEnded && (
           <div className="glass p-4 rounded-2xl border border-border/40 bg-border/5 flex flex-col gap-2 flex-shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-xs font-medium">
@@ -356,21 +460,47 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
               type="number"
               min={1}
               step={1}
-              max={ticketsRemaining || undefined}
+              max={ticketsRemaining || 10000}
               disabled={!allowMultipleEntries || isLoading || capacityReached || hasEnded}
-              value={allowMultipleEntries ? ticketCount : 1}
+              value={allowMultipleEntries ? ticketCount.toString() : "1"}
               onChange={(event) => {
-                const nextValue = Number(event.target.value)
-                if (Number.isNaN(nextValue) || nextValue < 1) {
+                const value = event.target.value
+                // Allow empty input temporarily for better UX
+                if (value === "") {
+                  return
+                }
+                const nextValue = parseInt(value, 10)
+                // Validate: must be positive integer
+                if (isNaN(nextValue) || nextValue < 1 || !Number.isInteger(nextValue)) {
+                  return
+                }
+                // Cap at 10,000 tickets max to prevent overflow
+                const maxTicketLimit = 10000
+                const upperBound = ticketsRemaining !== undefined 
+                  ? Math.min(ticketsRemaining, maxTicketLimit)
+                  : maxTicketLimit
+                const clampedValue = Math.min(Math.max(1, nextValue), upperBound)
+                setTicketCount(clampedValue)
+              }}
+              onBlur={(event) => {
+                // Ensure value is valid on blur
+                const value = event.target.value
+                if (value === "") {
                   setTicketCount(1)
                   return
                 }
-                const clamped = Math.max(1, Math.floor(nextValue))
-                // Clamp to available tickets if max is set
-                const maxAllowed = ticketsRemaining !== undefined 
-                  ? Math.min(clamped, ticketsRemaining)
-                  : clamped
-                setTicketCount(maxAllowed)
+                const parsedValue = parseInt(value, 10)
+                if (isNaN(parsedValue) || parsedValue < 1) {
+                  setTicketCount(1)
+                  return
+                }
+                // Clamp to available tickets and max limit
+                const maxTicketLimit = 10000
+                const upperBound = ticketsRemaining !== undefined 
+                  ? Math.min(ticketsRemaining, maxTicketLimit)
+                  : maxTicketLimit
+                const clampedValue = Math.min(Math.max(1, parsedValue), upperBound)
+                setTicketCount(clampedValue)
               }}
             />
           </div>
@@ -407,7 +537,7 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
             <Clock className="h-4 w-4" />
             <span className={isActuallyEnded ? "text-gray-400" : ""}>
               {isActuallyEnded
-                ? lottery.isCompleted
+                ? raffle.isCompleted
                   ? "Ended"
                   : "Expired"
                 : timeLeft > 0
@@ -431,20 +561,20 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
               <div className="flex flex-col gap-2 max-h-24 overflow-y-auto">
                 {winnersToDisplay.map((addr) => (
                   <div
-                    key={`${lottery.id}-${addr}`}
+                    key={`${raffle.id}-${addr}`}
                     className="font-mono text-sm font-semibold text-primary"
                   >
                     {shortenAddress(addr)}
                   </div>
                 ))}
               </div>
-            ) : lottery.isCompleted ? (
+            ) : raffle.isCompleted ? (
               <div className="text-muted-foreground text-sm">
                 No winners selected
               </div>
             ) : participants.length === 0 ? (
               <div className="text-muted-foreground text-sm">
-                No participants - lottery expired with no entries
+                No participants - raffle expired with no entries
               </div>
             ) : (
               <div className="text-muted-foreground text-sm">
@@ -459,7 +589,7 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
       </div>
 
       {/* Buy Ticket Button - Fixed at bottom with consistent alignment */}
-      {lottery.isActive && !isActuallyEnded && (
+      {raffle.isActive && !isActuallyEnded && (
         <div className="flex-shrink-0 px-7 pb-7 pt-1.5 border-t border-border/20">
           <Button
             onClick={handleBuyTicket}
@@ -481,22 +611,22 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
           <div className="h-5 mt-1.5">
             {!allowMultipleEntries && (
               <span className="text-xs text-muted-foreground block text-center">
-                Multiple entries are disabled for this lottery.
+                Multiple entries are disabled for this raffle.
               </span>
             )}
           </div>
         </div>
       )}
 
-      {/* Finalize Lottery Button - Anyone can finalize expired lotteries, creator can finalize early when max tickets reached */}
+      {/* Finalize Raffle Button - Anyone can finalize expired lotteries, creator can finalize early when max tickets reached */}
       {canFinalize && (
         <div className="flex-shrink-0 px-7 pb-7 pt-1.5 border-t border-border/20">
           <Button
-            onClick={handleFinalizeLottery}
+            onClick={handleFinalizeRaffle}
             disabled={isLoading}
             className="w-full glass-strong font-semibold text-base h-12 bg-purple-600 hover:bg-purple-700 text-white hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300"
           >
-            {isLoading ? "Finalizing..." : "Finalize Lottery & Select Winners"}
+            {isLoading ? "Finalizing..." : "Finalize Raffle & Select Winners"}
           </Button>
           <div className="h-5 mt-1.5">
             <span className="text-xs text-muted-foreground block text-center">
@@ -513,4 +643,4 @@ export function LotteryCard({ lottery, onUpdate }: LotteryCardProps) {
       )}
     </Card>
   )
-}
+})

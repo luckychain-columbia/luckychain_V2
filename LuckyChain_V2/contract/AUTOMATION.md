@@ -13,9 +13,9 @@ npm run deploy -- --network localhost
 ```
 
 **What it does:**
-- Deploys the Lottery contract using Hardhat Ignition
+- Deploys the Raffle contract using Hardhat Ignition
 - Automatically extracts the deployed contract address
-- Updates `../.env.local` with `NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS`
+- Updates `../.env.local` with `NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS`
 - Provides instructions to restart the Next.js dev server
 
 **Benefits:**
@@ -45,8 +45,8 @@ npm run export:abi
 
 **Usage in frontend:**
 ```typescript
-import { LOTTERY_ABI } from '@/lib/contract-abi';
-// Use LOTTERY_ABI with ethers.js
+import { RAFFLE_ABI } from '@/lib/contract-abi';
+// Use RAFFLE_ABI with ethers.js
 ```
 
 ---
@@ -85,7 +85,7 @@ npm run check -- --network sepolia
 **What it does:**
 - Finds the deployed contract address from Ignition
 - Connects to the contract on the network
-- Reads contract state (lottery count, settings)
+- Reads contract state (raffle count, settings)
 - Verifies contract is responding correctly
 
 **Benefits:**
@@ -256,12 +256,12 @@ Potential future automations:
 ## Troubleshooting
 
 ### Script fails to find deployment address
-- Ensure you've deployed using Ignition: `npx hardhat ignition deploy LotteryModule --network <network>`
+- Ensure you've deployed using Ignition: `npx hardhat ignition deploy RaffleModule --network <network>`
 - Check that `ignition/deployments/chain-<chainId>/` directory exists
 
 ### ABI export fails
 - Run `npm run compile` first to generate artifacts
-- Check that `artifacts/contracts/Lottery.sol/Lottery.json` exists
+- Check that `artifacts/contracts/Raffle.sol/Raffle.json` exists
 
 ### Verification fails
 - Ensure `ETHERSCAN_API_KEY` is set in `.env`

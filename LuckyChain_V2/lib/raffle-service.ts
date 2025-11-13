@@ -1,11 +1,11 @@
-import { getContract, type LotteryData, parseEther, isWeb3Available, isContractDeployed } from "./web3"
+import { getContract, type RaffleData, parseEther, isWeb3Available, isContractDeployed } from "./web3"
 
-const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] }> = [
+const MOCK_LOTTERIES: Array<RaffleData & { id: number; participants?: string[] }> = [
   {
     id: 0,
     creator: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     title: "Mega Jackpot Draw (Demo)",
-    description: "Win big in our flagship lottery with a massive prize pool. Draw happens when all tickets are sold!",
+    description: "Win big in our flagship raffle with a massive prize pool. Draw happens when all tickets are sold!",
     ticketPrice: parseEther("0.05"),
     maxTickets: BigInt(100),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 5),
@@ -18,8 +18,8 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
   {
     id: 1,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
-    title: "Quick Draw Lottery (Demo)",
-    description: "Fast-paced lottery with affordable tickets. Perfect for trying your luck!",
+    title: "Quick Draw Raffle (Demo)",
+    description: "Fast-paced raffle with affordable tickets. Perfect for trying your luck!",
     ticketPrice: parseEther("0.01"),
     maxTickets: BigInt(50),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 2),
@@ -32,7 +32,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
   {
     id: 2,
     creator: "0x1234567890123456789012345678901234567890",
-    title: "Community Lottery (Demo)",
+    title: "Community Raffle (Demo)",
     description: "Support the community while winning prizes. 10% goes to charity!",
     ticketPrice: parseEther("0.02"),
     maxTickets: BigInt(200),
@@ -61,7 +61,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
     id: 4,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Premium Prize Pool (Demo)",
-    description: "High stakes lottery for serious players. Massive rewards await!",
+    description: "High stakes raffle for serious players. Massive rewards await!",
     ticketPrice: parseEther("0.1"),
     maxTickets: BigInt(50),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 10),
@@ -75,7 +75,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
     id: 5,
     creator: "0x1234567890123456789012345678901234567890",
     title: "Midnight Madness (Demo)",
-    description: "Late night lottery ending at midnight. Get your tickets now!",
+    description: "Late night raffle ending at midnight. Get your tickets now!",
     ticketPrice: parseEther("0.03"),
     maxTickets: BigInt(80),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 43200),
@@ -89,7 +89,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
     id: 6,
     creator: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
     title: "Weekend Special (Demo)",
-    description: "Completed lottery - congratulations to the winner!",
+    description: "Completed raffle - congratulations to the winner!",
     ticketPrice: parseEther("0.03"),
     maxTickets: BigInt(75),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400),
@@ -117,7 +117,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
     id: 8,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Flash Friday (Demo)",
-    description: "24-hour flash lottery that ended last week. Winner claimed 1.5 ETH!",
+    description: "24-hour flash raffle that ended last week. Winner claimed 1.5 ETH!",
     ticketPrice: parseEther("0.025"),
     maxTickets: BigInt(60),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 5),
@@ -131,7 +131,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
     id: 9,
     creator: "0x1234567890123456789012345678901234567890",
     title: "Spring Jackpot (Demo)",
-    description: "Seasonal lottery that concluded with great prizes distributed!",
+    description: "Seasonal raffle that concluded with great prizes distributed!",
     ticketPrice: parseEther("0.04"),
     maxTickets: BigInt(120),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 14),
@@ -143,7 +143,7 @@ const MOCK_LOTTERIES: Array<LotteryData & { id: number; participants?: string[] 
   },
 ]
 
-export async function createLottery(
+export async function createRaffle(
   title: string,
   description: string,
   ticketPrice: string,
@@ -155,21 +155,21 @@ export async function createLottery(
   }
 
   if (!isContractDeployed()) {
-    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS environment variable with a deployed contract address.")
+    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS environment variable with a deployed contract address.")
   }
 
   try {
     const contract = await getContract()
     const durationInSeconds = durationInDays * 24 * 60 * 60
 
-    const tx = await contract.createLottery(title, description, parseEther(ticketPrice), maxTickets, durationInSeconds)
+    const tx = await contract.createRaffle(title, description, parseEther(ticketPrice), maxTickets, durationInSeconds)
 
     const receipt = await tx.wait()
 
-    // Extract lottery ID from event
+    // Extract raffle ID from event
     const event = receipt.logs.find((log: any) => {
       try {
-        return contract.interface.parseLog(log)?.name === "LotteryCreated"
+        return contract.interface.parseLog(log)?.name === "RaffleCreated"
       } catch {
         return false
       }
@@ -182,23 +182,23 @@ export async function createLottery(
 
     return null
   } catch (error: any) {
-    console.error("Error creating lottery:", error)
-    throw new Error(error.message || "Failed to create lottery. Make sure the contract is deployed and you have the correct permissions.")
+    console.error("Error creating raffle:", error)
+    throw new Error(error.message || "Failed to create raffle. Make sure the contract is deployed and you have the correct permissions.")
   }
 }
 
-export async function buyTicket(lotteryId: number, ticketPrice: bigint) {
+export async function buyTicket(raffleId: number, ticketPrice: bigint) {
   if (!isWeb3Available()) {
     throw new Error("Please install a Web3 wallet to buy tickets")
   }
 
   if (!isContractDeployed()) {
-    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS environment variable with a deployed contract address.")
+    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS environment variable with a deployed contract address.")
   }
 
   try {
     const contract = await getContract()
-    const tx = await contract.buyTicket(lotteryId, { value: ticketPrice })
+    const tx = await contract.buyTicket(raffleId, { value: ticketPrice })
     await tx.wait()
   } catch (error: any) {
     console.error("Error buying ticket:", error)
@@ -206,18 +206,18 @@ export async function buyTicket(lotteryId: number, ticketPrice: bigint) {
   }
 }
 
-export async function selectWinner(lotteryId: number) {
+export async function selectWinner(raffleId: number) {
   if (!isWeb3Available()) {
     throw new Error("Please install a Web3 wallet to select winners")
   }
 
   if (!isContractDeployed()) {
-    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS environment variable with a deployed contract address.")
+    throw new Error("Smart contract not deployed. Please set NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS environment variable with a deployed contract address.")
   }
 
   try {
     const contract = await getContract()
-    const tx = await contract.selectWinner(lotteryId)
+    const tx = await contract.selectWinner(raffleId)
     await tx.wait()
   } catch (error: any) {
     console.error("Error selecting winner:", error)
@@ -225,59 +225,59 @@ export async function selectWinner(lotteryId: number) {
   }
 }
 
-export async function getLotteryInfo(lotteryId: number): Promise<LotteryData> {
+export async function getRaffleInfo(raffleId: number): Promise<RaffleData> {
   if (!isWeb3Available() || !isContractDeployed()) {
-    const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
-    if (mockLottery) {
-      const { id, participants, ...data } = mockLottery
+    const mockRaffle = MOCK_LOTTERIES.find((l) => l.id === raffleId)
+    if (mockRaffle) {
+      const { id, participants, ...data } = mockRaffle
       return data
     }
-    throw new Error("Lottery not found")
+    throw new Error("Raffle not found")
   }
 
   try {
     const contract = await getContract()
-    return await contract.getLotteryInfo(lotteryId)
+    return await contract.getRaffleInfo(raffleId)
   } catch (error) {
     // Fallback to mock data if contract call fails
     console.warn("Contract call failed, using mock data:", error)
-    const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
-    if (mockLottery) {
-      const { id, participants, ...data } = mockLottery
+    const mockRaffle = MOCK_LOTTERIES.find((l) => l.id === raffleId)
+    if (mockRaffle) {
+      const { id, participants, ...data } = mockRaffle
       return data
     }
-    throw new Error("Lottery not found")
+    throw new Error("Raffle not found")
   }
 }
 
-export async function getParticipants(lotteryId: number): Promise<string[]> {
+export async function getParticipants(raffleId: number): Promise<string[]> {
   if (!isWeb3Available() || !isContractDeployed()) {
-    const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
-    if (mockLottery) {
-      return mockLottery.participants || []
+    const mockRaffle = MOCK_LOTTERIES.find((l) => l.id === raffleId)
+    if (mockRaffle) {
+      return mockRaffle.participants || []
     }
     return []
   }
 
   try {
     const contract = await getContract()
-    return await contract.getParticipants(lotteryId)
+    return await contract.getParticipants(raffleId)
   } catch (error) {
     // Fallback to mock data if contract call fails
     console.warn("Contract call failed, using mock data:", error)
-    const mockLottery = MOCK_LOTTERIES.find((l) => l.id === lotteryId)
-    return mockLottery?.participants || []
+    const mockRaffle = MOCK_LOTTERIES.find((l) => l.id === raffleId)
+    return mockRaffle?.participants || []
   }
 }
 
-export async function getUserTickets(lotteryId: number, userAddress: string): Promise<number[]> {
+export async function getUserTickets(raffleId: number, userAddress: string): Promise<number[]> {
   if (!isWeb3Available() || !isContractDeployed()) {
     return []
   }
 
   try {
     const contract = await getContract()
-    const tickets = await contract.getUserTickets(lotteryId, userAddress)
+    const tickets = await contract.getUserTickets(raffleId, userAddress)
     return tickets.map((t: bigint) => Number(t))
   } catch (error) {
     // Fallback to empty array if contract call fails
@@ -286,14 +286,14 @@ export async function getUserTickets(lotteryId: number, userAddress: string): Pr
   }
 }
 
-export async function getLotteryCount(): Promise<number> {
+export async function getRaffleCount(): Promise<number> {
   if (!isWeb3Available() || !isContractDeployed()) {
     return MOCK_LOTTERIES.length
   }
 
   try {
     const contract = await getContract()
-    const count = await contract.lotteryCount()
+    const count = await contract.raffleCount()
     return Number(count)
   } catch (error) {
     // Fallback to mock data if contract call fails
@@ -302,17 +302,17 @@ export async function getLotteryCount(): Promise<number> {
   }
 }
 
-export async function getAllLotteries(): Promise<Array<LotteryData & { id: number }>> {
+export async function getAllLotteries(): Promise<Array<RaffleData & { id: number }>> {
   if (!isWeb3Available() || !isContractDeployed()) {
     return MOCK_LOTTERIES
   }
 
   try {
-    const count = await getLotteryCount()
+    const count = await getRaffleCount()
     const lotteries = []
 
     for (let i = 0; i < count; i++) {
-      const info = await getLotteryInfo(i)
+      const info = await getRaffleInfo(i)
       lotteries.push({ ...info, id: i })
     }
 

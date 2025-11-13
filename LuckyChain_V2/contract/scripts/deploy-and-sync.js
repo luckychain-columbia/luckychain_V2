@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Deploy Lottery contract using Ignition and automatically sync the address to frontend .env
+ * Deploy Raffle contract using Ignition and automatically sync the address to frontend .env
  * Usage: node scripts/deploy-and-sync.js --network sepolia
  */
 
@@ -14,12 +14,12 @@ const args = process.argv.slice(2);
 const networkIndex = args.findIndex(arg => arg === '--network');
 const network = networkIndex !== -1 && args[networkIndex + 1] ? args[networkIndex + 1] : 'sepolia';
 
-console.log(`🚀 Deploying Lottery contract to ${network}...\n`);
+console.log(`🚀 Deploying Raffle contract to ${network}...\n`);
 
 try {
   // Step 1: Deploy using Ignition
   console.log('📦 Deploying contract with Ignition...');
-  execSync(`npx hardhat ignition deploy LotteryModule --network ${network}`, {
+  execSync(`npx hardhat ignition deploy RaffleModule --network ${network}`, {
     stdio: 'inherit',
     cwd: __dirname + '/..'
   });

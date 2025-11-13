@@ -1,5 +1,5 @@
 import { ethers } from "ethers"
-import type { Lottery, LotteryData, LotterySummary } from "../types"
+import type { Raffle, RaffleData, RaffleSummary } from "../types"
 
 // Format wallet address to show first 6 and last 4 characters
 // Example: 0x1234...5678 instead of the full 42-character address
@@ -21,11 +21,11 @@ export const parseEther = (value: string): bigint => {
   return ethers.parseEther(value)
 }
 
-// Converts contract lottery data to frontend-friendly format
-export function normalizeLottery(
-  raw: LotteryData | LotterySummary | any,
+// Converts contract raffle data to frontend-friendly format
+export function normalizeRaffle(
+  raw: RaffleData | RaffleSummary | any,
   index?: number,
-): Lottery {
+): Raffle {
   // Handle different input formats
   const id = index !== undefined ? index : Number(raw.id ?? 0)
   const title = raw.title || ""
@@ -114,7 +114,7 @@ export function normalizeLottery(
   }
 }
 
-// Calculate time remaining until lottery ends
+// Calculate time remaining until raffle ends
 export const getTimeRemaining = (endDate: number | bigint): string => {
   const endTimestamp = typeof endDate === "bigint" ? Number(endDate) : endDate
   const now = Math.floor(Date.now() / 1000)
@@ -137,7 +137,7 @@ export const getTimeRemaining = (endDate: number | bigint): string => {
   return `${seconds}s`
 }
 
-// Calculate total prize pool for a lottery
+// Calculate total prize pool for a raffle
 export const calculatePrizePool = (
   entryFee: number,
   entrants: number,

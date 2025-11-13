@@ -143,6 +143,7 @@
 /* Glowing border effects */
 .glow-border {
   position: relative;
+  isolation: isolate;
 }
 
 .glow-border::before {
@@ -157,8 +158,8 @@
   mask-composite: exclude;
   opacity: 0.6;
   animation: glow-pulse 3s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 0;
+  pointer-events: none !important;
+  z-index: -1;
 }
 
 @keyframes glow-pulse {

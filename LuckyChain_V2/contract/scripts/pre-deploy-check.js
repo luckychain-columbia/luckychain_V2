@@ -49,7 +49,7 @@ async function main() {
 
   // Check 1: Contract compilation
   console.log('1️⃣  Checking contract compilation...');
-  const artifactsPath = path.join(__dirname, '../artifacts/contracts/Lottery.sol/Lottery.json');
+  const artifactsPath = path.join(__dirname, '../artifacts/contracts/Raffle.sol/Raffle.json');
   if (fs.existsSync(artifactsPath)) {
     success('Contract artifacts found');
   } else {
@@ -103,7 +103,7 @@ async function main() {
   if (fs.existsSync(frontendEnvPath)) {
     success('Frontend .env.local file exists');
     const envContent = fs.readFileSync(frontendEnvPath, 'utf8');
-    if (envContent.includes('NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS')) {
+    if (envContent.includes('NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS')) {
       success('Contract address variable is set in frontend .env');
     } else {
       warning('Contract address variable not found in frontend .env (will be created after deployment)');
@@ -114,7 +114,7 @@ async function main() {
 
   // Check 6: Ignition module exists
   console.log('\n6️⃣  Checking Ignition module...');
-  const modulePath = path.join(__dirname, '../ignition/modules/LotteryModule.js');
+  const modulePath = path.join(__dirname, '../ignition/modules/RaffleModule.js');
   if (fs.existsSync(modulePath)) {
     success('Ignition module found');
   } else {

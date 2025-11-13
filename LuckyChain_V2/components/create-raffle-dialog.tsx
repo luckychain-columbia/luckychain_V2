@@ -20,15 +20,15 @@ import { useToast } from "@/hooks/use-toast"
 import useContract from "@/app/services/contract"
 import { useWeb3 } from "@/app/context/Web3Context"
 
-interface CreateLotteryDialogProps {
+interface CreateRaffleDialogProps {
   onSuccess?: () => void
 }
 
-export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
+export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const { createLottery } = useContract()
+  const { createRaffle } = useContract()
   const { account } = useWeb3()
 
   const [formData, setFormData] = useState({
@@ -45,10 +45,15 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
+    // Prevent multiple simultaneous submissions
+    if (isLoading) {
+      return
+    }
+    
     if (!account) {
       toast({
         title: "Wallet Required",
-        description: "Please connect your wallet to create a lottery",
+        description: "Please connect your wallet to create a raffle",
         variant: "destructive",
       })
       return
@@ -59,13 +64,19 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
     try {
       // Validate title
       if (!formData.title?.trim()) {
-        throw new Error("Please enter a lottery title")
+        throw new Error("Please enter a raffle title")
       }
 
       // Validate entry fee
       const entryFee = parseFloat(formData.entryFee)
       if (isNaN(entryFee) || entryFee <= 0) {
         throw new Error("Please enter a valid ticket price (greater than 0)")
+      }
+      if (entryFee > 1000) {
+        throw new Error("Ticket price cannot exceed 1000 ETH")
+      }
+      if (!Number.isFinite(entryFee)) {
+        throw new Error("Ticket price must be a valid number")
       }
 
       // Validate end date
@@ -87,9 +98,13 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
       }
 
       // Validate number of winners
-      const numWinners = Math.max(1, Math.floor(parseFloat(formData.numberOfWinners) || 1))
-      if (numWinners > 100) {
-        throw new Error("Number of winners cannot exceed 100")
+      const numWinnersValue = formData.numberOfWinners.trim()
+      if (!numWinnersValue) {
+        throw new Error("Number of winners is required")
+      }
+      const numWinners = parseInt(numWinnersValue, 10)
+      if (isNaN(numWinners) || numWinners < 1 || numWinners > 100 || !Number.isInteger(numWinners)) {
+        throw new Error("Number of winners must be an integer between 1 and 100")
       }
 
       // Validate max entrants
@@ -97,11 +112,11 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
         formData.maxEntrants.trim().length > 0
           ? (() => {
               const parsed = parseInt(formData.maxEntrants, 10)
-              if (isNaN(parsed) || parsed < 1) {
-                throw new Error("Max entrants must be a positive number")
+              if (isNaN(parsed) || parsed < 1 || !Number.isInteger(parsed)) {
+                throw new Error("Max entrants must be a positive integer")
               }
               if (parsed < numWinners) {
-                throw new Error("Max entrants cannot be less than number of winners")
+                throw new Error(`Max entrants (${parsed}) cannot be less than number of winners (${numWinners})`)
               }
               return parsed
             })()
@@ -110,7 +125,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
       // Validate creator fee
       const creatorFee = Math.max(0, Math.min(100, formData.creatorFee))
 
-      await createLottery({
+      await createRaffle({
         title: formData.title.trim(),
         description: (formData.description || formData.title).trim(),
         entryFee: formData.entryFee,
@@ -123,7 +138,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
 
       toast({
         title: "Success!",
-        description: "Lottery created successfully",
+        description: "Raffle created successfully",
       })
 
       setOpen(false)
@@ -139,9 +154,19 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
       })
       onSuccess?.()
     } catch (error: any) {
+      // Extract user-friendly error message
+      let errorMessage = "Failed to create raffle"
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (error?.reason) {
+        errorMessage = error.reason
+      } else if (typeof error === "string") {
+        errorMessage = error
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to create lottery",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -154,20 +179,20 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
       <DialogTrigger asChild>
         <Button size="lg" className="glass-strong font-medium text-white">
           <Plus className="mr-2 h-4 w-4" />
-          Create Lottery
+          Create Raffle
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-black/80 backdrop-blur-xl border-white/20 sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-4xl font-bold text-white">Create New Lottery</DialogTitle>
+          <DialogTitle className="text-4xl font-bold text-white">Create New Raffle</DialogTitle>
           <DialogDescription className="text-gray-300 text-base">
-            Set up your lottery parameters. All fields are stored on the blockchain.
+            Set up your raffle parameters. All fields are stored on the blockchain.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
             <Label htmlFor="title" className="text-white font-medium">
-              Lottery Title <span className="text-red-400">*</span>
+              Raffle Title <span className="text-red-400">*</span>
             </Label>
             <Input
               id="title"
@@ -187,7 +212,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
             </Label>
             <Input
               id="description"
-              placeholder="Describe your lottery..."
+              placeholder="Describe your raffle..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
@@ -201,14 +226,28 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
             <Input
               id="entryFee"
               type="number"
-              step="0.01"
+              step="0.0001"
+              min="0.0001"
+              max="1000"
               placeholder="0.01"
               value={formData.entryFee}
-              onChange={(e) => setFormData({ ...formData, entryFee: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value
+                // Allow empty input for user experience
+                if (value === "") {
+                  setFormData({ ...formData, entryFee: "" })
+                  return
+                }
+                const numValue = parseFloat(value)
+                // Validate: must be positive and finite
+                if (!isNaN(numValue) && numValue > 0 && numValue <= 1000 && Number.isFinite(numValue)) {
+                  setFormData({ ...formData, entryFee: value })
+                }
+              }}
               required
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
-            <p className="text-sm text-gray-400">How much ETH to enter the lottery</p>
+            <p className="text-sm text-gray-400">How much ETH to enter the raffle</p>
           </div>
 
           <div className="space-y-3">
@@ -240,13 +279,36 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
               id="numberOfWinners"
               type="number"
               min="1"
+              max="100"
+              step="1"
               placeholder="1"
               value={formData.numberOfWinners}
-              onChange={(e) => setFormData({ ...formData, numberOfWinners: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value
+                // Allow empty input temporarily
+                if (value === "") {
+                  setFormData({ ...formData, numberOfWinners: "" })
+                  return
+                }
+                const numValue = parseInt(value, 10)
+                // Validate: must be positive integer between 1 and 100
+                if (!isNaN(numValue) && numValue >= 1 && numValue <= 100 && Number.isInteger(numValue)) {
+                  setFormData({ ...formData, numberOfWinners: value })
+                }
+              }}
+              onBlur={(e) => {
+                // Ensure value is valid on blur
+                const value = parseInt(e.target.value, 10)
+                if (isNaN(value) || value < 1) {
+                  setFormData({ ...formData, numberOfWinners: "1" })
+                } else if (value > 100) {
+                  setFormData({ ...formData, numberOfWinners: "100" })
+                }
+              }}
               required
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
-            <p className="text-sm text-gray-400">Prize pool will be split equally among winners</p>
+            <p className="text-sm text-gray-400">Prize pool will be split equally among winners (1-100)</p>
           </div>
 
           <div className="space-y-2">
@@ -261,7 +323,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
               required
               className="bg-white/10 border-white/20 text-white"
             />
-            <p className="text-sm text-gray-400">When the lottery will automatically end and select winners</p>
+            <p className="text-sm text-gray-400">When the raffle will automatically end and select winners</p>
           </div>
 
           <div className="space-y-2">
@@ -271,12 +333,49 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
             <Input
               id="maxEntrants"
               type="number"
+              min="1"
+              step="1"
+              max="10000"
               placeholder="Leave empty for unlimited"
               value={formData.maxEntrants}
-              onChange={(e) => setFormData({ ...formData, maxEntrants: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value
+                // Allow empty input for unlimited
+                if (value === "") {
+                  setFormData({ ...formData, maxEntrants: "" })
+                  return
+                }
+                const numValue = parseInt(value, 10)
+                // Validate: must be positive integer between 1 and 10,000
+                if (!isNaN(numValue) && numValue >= 1 && numValue <= 10000 && Number.isInteger(numValue)) {
+                  setFormData({ ...formData, maxEntrants: value })
+                }
+              }}
+              onBlur={(e) => {
+                // Ensure value is valid on blur and at least equal to number of winners
+                const value = e.target.value
+                if (value === "") {
+                  return
+                }
+                const numValue = parseInt(value, 10)
+                const numWinnersValue = parseInt(formData.numberOfWinners.trim() || "1", 10)
+                const minWinners = isNaN(numWinnersValue) ? 1 : numWinnersValue
+                
+                if (isNaN(numValue) || numValue < 1 || numValue > 10000) {
+                  setFormData({ ...formData, maxEntrants: "" })
+                  return
+                }
+                // Validate against number of winners
+                if (numValue < minWinners) {
+                  // Auto-adjust to minimum required value
+                  setFormData({ ...formData, maxEntrants: minWinners.toString() })
+                }
+              }}
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
-            <p className="text-sm text-gray-400">Leave empty for unlimited participants</p>
+            <p className="text-sm text-gray-400">
+              Leave empty for unlimited participants. Must be at least {formData.numberOfWinners.trim() || "1"} (number of winners) and cannot exceed 10,000.
+            </p>
           </div>
 
           <div className="flex items-start space-x-3 p-4 rounded-lg border border-white/20 bg-white/10">
@@ -290,7 +389,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
               <Label htmlFor="allowMultipleEntries" className="text-white font-medium cursor-pointer">
                 Allow Multiple Entries Per Wallet
               </Label>
-              <p className="text-sm text-gray-400">If checked, users can buy multiple tickets for this lottery</p>
+              <p className="text-sm text-gray-400">If checked, users can buy multiple tickets for this raffle</p>
             </div>
           </div>
 
@@ -301,7 +400,7 @@ export function CreateLotteryDialog({ onSuccess }: CreateLotteryDialogProps) {
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
               size="lg"
             >
-              {isLoading ? "Creating..." : "Create Lottery"}
+              {isLoading ? "Creating..." : "Create Raffle"}
             </Button>
             <p className="text-sm text-gray-400 text-center">
               This will create a transaction in your wallet for you to approve

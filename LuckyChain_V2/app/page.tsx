@@ -1,72 +1,89 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import { WalletConnect } from "@/components/wallet-connect"
-import { LotteryCard } from "@/components/lottery-card"
-import { CreateLotteryDialog } from "@/components/create-lottery-dialog"
+import { RaffleCard } from "@/components/raffle-card"
+import { CreateRaffleDialog } from "@/components/create-raffle-dialog"
 import { PixelatedCash } from "@/components/pixelated-cash"
-import type { LotteryData } from "@/lib/web3"
+import { RaffleCardSkeleton } from "@/components/raffle-card-skeleton"
+import type { RaffleData } from "@/lib/web3"
 import { Sparkles, Trophy, Shield, Zap } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { useWeb3 } from "./context/Web3Context"
-import useContract, { type ContractLottery } from "./services/contract"
+import useContract, { type ContractRaffle } from "./services/contract"
 
 export default function Home() {
-  const [lotteries, setLotteries] = useState<ContractLottery[]>([])
+  const [raffles, setRaffles] = useState<ContractRaffle[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("active")
   const { account: address } = useWeb3()
-  const { loadLotteries: loadLotteriesFromContract } = useContract()
+  const { loadRaffles: loadRafflesFromContract } = useContract()
 
-  async function handleLoadLotteries() {
+  const handleLoadRaffles = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = await loadLotteriesFromContract()
-      setLotteries(data.reverse())
+      const data = await loadRafflesFromContract()
+      setRaffles(data.reverse())
     } catch (error) {
-      console.error("Failed to load lotteries:", error)
-      setLotteries([])
+      console.error("Failed to load raffles:", error)
+      setRaffles([])
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [loadRafflesFromContract])
 
   useEffect(() => {
-    handleLoadLotteries()
+    handleLoadRaffles()
     
-    // Refresh lotteries periodically to catch expired ones
+    // Refresh raffles periodically to catch expired ones
+    // Note: Cache will reduce RPC calls - only active raffles will be refetched
     const interval = setInterval(() => {
-      handleLoadLotteries()
-    }, 30000) // Refresh every 30 seconds
+      handleLoadRaffles()
+    }, 30000) // Refresh every 30 seconds (cache will prevent unnecessary calls)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [handleLoadRaffles])
 
-  // Filter lotteries - check if time has expired even if not completed
-  const activeLotteries = lotteries.filter((lottery) => {
-    if (!lottery.isActive || lottery.isCompleted) return false
-    const endTimestamp = Number(lottery.endTime ?? 0)
+  // Memoize filtered raffles to avoid recalculating on every render
+  // Calculate current time inside the filter functions for accuracy
+  const activeRaffles = useMemo(() => {
     const nowSeconds = Math.floor(Date.now() / 1000)
-    return endTimestamp === 0 || endTimestamp > nowSeconds
-  })
+    return raffles.filter((raffle) => {
+      if (!raffle.isActive || raffle.isCompleted) return false
+      const endTimestamp = Number(raffle.endTime ?? 0)
+      return endTimestamp === 0 || endTimestamp > nowSeconds
+    })
+  }, [raffles])
   
-  const endedLotteries = lotteries.filter((lottery) => {
-    if (!lottery.isActive || lottery.isCompleted) return true
-    const endTimestamp = Number(lottery.endTime ?? 0)
+  const endedRaffles = useMemo(() => {
     const nowSeconds = Math.floor(Date.now() / 1000)
-    return endTimestamp > 0 && endTimestamp <= nowSeconds
-  })
-  const createdLotteries = address
-    ? lotteries.filter((lottery) => lottery.creator?.toLowerCase() === address.toLowerCase())
-    : []
-  const enteredLotteries = address
-    ? lotteries.filter((lottery) => {
-        const participants = lottery.participants || []
-        return participants.some((p: string) => p?.toLowerCase() === address.toLowerCase())
-      })
-    : []
+    return raffles.filter((raffle) => {
+      if (!raffle.isActive || raffle.isCompleted) return true
+      const endTimestamp = Number(raffle.endTime ?? 0)
+      return endTimestamp > 0 && endTimestamp <= nowSeconds
+    })
+  }, [raffles])
+  
+  const createdRaffles = useMemo(() => {
+    if (!address) return []
+    const addressLower = address.toLowerCase()
+    return raffles.filter((raffle) => raffle.creator?.toLowerCase() === addressLower)
+  }, [raffles, address])
+  
+  const enteredRaffles = useMemo(() => {
+    if (!address) return []
+    const addressLower = address.toLowerCase()
+    return raffles.filter((raffle) => {
+      const participants = raffle.participants || []
+      return participants.some((p: string) => p?.toLowerCase() === addressLower)
+    })
+  }, [raffles, address])
+
+  const handleRaffleUpdate = useCallback(() => {
+    handleLoadRaffles()
+  }, [handleLoadRaffles])
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -126,7 +143,7 @@ export default function Home() {
             </div>
 
             <h1 className="text-6xl md:text-8xl font-bold text-balance leading-[1.1] tracking-tight text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-              Transparent Lottery
+              Transparent Raffle
             </h1>
 
             <div className="py-6 -mx-4">
@@ -155,12 +172,12 @@ export default function Home() {
             </div>
 
             <p className="text-xl text-white/90 max-w-2xl mx-auto text-pretty leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-              Create and participate in provably fair lotteries. Every draw is transparent, verifiable, and secured by
+              Create and participate in provably fair raffles. Every draw is transparent, verifiable, and secured by
               smart contracts on the Ethereum blockchain.
             </p>
 
             <div className="flex items-center justify-center gap-4 pt-4">
-              <CreateLotteryDialog onSuccess={handleLoadLotteries} />
+              <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
             </div>
           </div>
 
@@ -191,7 +208,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold">Create Your Own</h3>
               <p className="text-sm text-muted-foreground text-pretty leading-relaxed">
-                Anyone can create a lottery with custom parameters and prize pools
+                Anyone can create a raffle with custom parameters and prize pools
               </p>
             </div>
           </div>
@@ -204,17 +221,17 @@ export default function Home() {
             <div>
               <h2 className="text-4xl font-bold mb-3 tracking-tight">
                 {activeTab === "active"
-                  ? "Active Lotteries"
+                  ? "Active Raffles"
                   : activeTab === "ended"
-                    ? "Ended Lotteries"
-                    : "My Lotteries"}
+                    ? "Ended Raffles"
+                    : "My Raffles"}
               </h2>
               <p className="text-muted-foreground text-lg">
                 {activeTab === "active"
-                  ? "Browse and participate in ongoing lotteries"
+                  ? "Browse and participate in ongoing raffles"
                   : activeTab === "ended"
-                    ? "View completed lottery results"
-                    : "Lotteries you have created or entered"}
+                    ? "View completed raffle results"
+                    : "Raffles you have created or entered"}
               </p>
             </div>
             <TabsList className="glass-strong">
@@ -225,7 +242,7 @@ export default function Home() {
                 Ended
               </TabsTrigger>
               <TabsTrigger value="my" className="data-[state=active]:bg-primary/20">
-                My Lotteries
+                My Raffles
               </TabsTrigger>
             </TabsList>
           </div>
@@ -234,20 +251,20 @@ export default function Home() {
             {isLoading ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="glass-strong h-96 rounded-3xl shimmer" />
+                  <RaffleCardSkeleton key={i} />
                 ))}
               </div>
-            ) : activeLotteries.length === 0 ? (
+            ) : activeRaffles.length === 0 ? (
               <div className="glass-strong glow-border rounded-3xl p-16 text-center">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
-                <h3 className="text-2xl font-semibold mb-3">No active lotteries</h3>
-                <p className="text-muted-foreground mb-8 text-lg">Be the first to create a lottery on the platform</p>
-                <CreateLotteryDialog onSuccess={handleLoadLotteries} />
+                <h3 className="text-2xl font-semibold mb-3">No active raffles</h3>
+                <p className="text-muted-foreground mb-8 text-lg">Be the first to create a raffle on the platform</p>
+                <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeLotteries.map((lottery) => (
-                  <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
+                {activeRaffles.map((raffle) => (
+                  <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
                 ))}
               </div>
             )}
@@ -257,19 +274,19 @@ export default function Home() {
             {isLoading ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="glass-strong h-96 rounded-3xl shimmer" />
+                  <RaffleCardSkeleton key={i} />
                 ))}
               </div>
-            ) : endedLotteries.length === 0 ? (
+            ) : endedRaffles.length === 0 ? (
               <div className="glass-strong glow-border rounded-3xl p-16 text-center">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
-                <h3 className="text-2xl font-semibold mb-3">No ended lotteries yet</h3>
-                <p className="text-muted-foreground text-lg">Completed lotteries will appear here</p>
+                <h3 className="text-2xl font-semibold mb-3">No ended raffles yet</h3>
+                <p className="text-muted-foreground text-lg">Completed raffles will appear here</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {endedLotteries.map((lottery) => (
-                  <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
+                {endedRaffles.map((raffle) => (
+                  <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
                 ))}
               </div>
             )}
@@ -281,14 +298,14 @@ export default function Home() {
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
                 <h3 className="text-2xl font-semibold mb-3">Connect your wallet</h3>
                 <p className="text-muted-foreground mb-8 text-lg">
-                  Connect your wallet to view lotteries you've created or entered
+                  Connect your wallet to view raffles you've created or entered
                 </p>
                 <WalletConnect />
               </div>
             ) : isLoading ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="glass-strong h-96 rounded-3xl shimmer" />
+                  <RaffleCardSkeleton key={i} />
                 ))}
               </div>
             ) : (
@@ -296,16 +313,16 @@ export default function Home() {
                 <div>
                   <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
                     <Sparkles className="h-6 w-6 text-secondary" />
-                    Lotteries I Entered
+                    Raffles I Entered
                   </h3>
-                  {enteredLotteries.length === 0 ? (
+                  {enteredRaffles.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
-                      <p className="text-muted-foreground">You haven't entered any lotteries yet</p>
+                      <p className="text-muted-foreground">You haven't entered any raffles yet</p>
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {enteredLotteries.map((lottery) => (
-                        <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
+                      {enteredRaffles.map((raffle) => (
+                        <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
                       ))}
                     </div>
                   )}
@@ -314,17 +331,17 @@ export default function Home() {
                 <div>
                   <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
                     <Trophy className="h-6 w-6 text-primary" />
-                    Lotteries I Created
+                    Raffles I Created
                   </h3>
-                  {createdLotteries.length === 0 ? (
+                  {createdRaffles.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
-                      <p className="text-muted-foreground mb-6">You haven't created any lotteries yet</p>
-                      <CreateLotteryDialog onSuccess={handleLoadLotteries} />
+                      <p className="text-muted-foreground mb-6">You haven't created any raffles yet</p>
+                      <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {createdLotteries.map((lottery) => (
-                        <LotteryCard key={lottery.id} lottery={lottery} onUpdate={handleLoadLotteries} />
+                      {createdRaffles.map((raffle) => (
+                        <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
                       ))}
                     </div>
                   )}

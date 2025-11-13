@@ -92,7 +92,7 @@ export default function FYIPage() {
                   How It Works
                 </h1>
                 <p className="text-xl text-white/90 max-w-2xl mx-auto">
-                  Everything you need to know about LuckyChain decentralized lotteries
+                  Everything you need to know about LuckyChain decentralized raffles
                 </p>
               </div>
 
@@ -105,15 +105,15 @@ export default function FYIPage() {
                   <h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
                 </div>
                 <Accordion type="single" collapsible className="w-full space-y-2">
-                  <AccordionItem value="what-is-luckychain" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="what-is-luckychain" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       What is LuckyChain?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-3 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
                       <p>
-                        LuckyChain is a decentralized lottery platform built on Ethereum smart contracts.
-                        Anyone can create a lottery, set the rules, and participants can buy tickets to enter.
-                        Winners are selected randomly and fairly when the lottery ends, with prizes distributed
+                        LuckyChain is a decentralized raffle platform built on Ethereum smart contracts.
+                        Anyone can create a raffle, set the rules, and participants can buy tickets to enter.
+                        Winners are selected randomly and fairly when the raffle ends, with prizes distributed
                         automatically through the smart contract.
                       </p>
                       <div className="grid md:grid-cols-3 gap-4 mt-4">
@@ -141,35 +141,35 @@ export default function FYIPage() {
                             <span className="font-semibold">Decentralized</span>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            No central authority controls the lotteries
+                            No central authority controls the raffles
                           </p>
                         </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="how-to-create" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
-                      How do I create a lottery?
+                  <AccordionItem value="how-to-create" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
+                      How do I create a raffle?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-3 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
                       <p>
-                        Creating a lottery is simple and only takes a few steps:
+                        Creating a raffle is simple and only takes a few steps:
                       </p>
                       <div className="space-y-3">
                         <div>
                           <p className="font-semibold text-white mb-1">Step 1: Connect Your Wallet</p>
                           <p className="text-sm">
-                            Connect your Web3 wallet (like MetaMask) to create a lottery. You'll need ETH to
+                            Connect your Web3 wallet (like MetaMask) to create a raffle. You'll need ETH to
                             pay for the transaction gas fee.
                           </p>
                         </div>
                         <div>
-                          <p className="font-semibold text-white mb-1">Step 2: Set Lottery Parameters</p>
+                          <p className="font-semibold text-white mb-1">Step 2: Set Raffle Parameters</p>
                           <ul className="text-sm ml-5 list-disc space-y-1">
-                            <li><strong>Title & Description:</strong> Name and describe your lottery</li>
+                            <li><strong>Title & Description:</strong> Name and describe your raffle</li>
                             <li><strong>Ticket Price:</strong> How much each ticket costs in ETH</li>
-                            <li><strong>End Date:</strong> When the lottery ends (must be in the future)</li>
+                            <li><strong>End Date:</strong> When the raffle ends (must be in the future)</li>
                             <li><strong>Number of Winners:</strong> How many winners to select (1-100)</li>
                             <li><strong>Creator Fee:</strong> Your percentage of the prize pool (0-100%)</li>
                             <li><strong>Max Entrants:</strong> Maximum number of participants (optional, leave blank for unlimited)</li>
@@ -179,22 +179,22 @@ export default function FYIPage() {
                         <div>
                           <p className="font-semibold text-white mb-1">Step 3: Deploy to Blockchain</p>
                           <p className="text-sm">
-                            Click "Create Lottery" and approve the transaction in your wallet. Once confirmed,
-                            your lottery is live on the blockchain and ready for participants!
+                            Click "Create Raffle" and approve the transaction in your wallet. Once confirmed,
+                            your raffle is live on the blockchain and ready for participants!
                           </p>
                         </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="how-to-participate" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
-                      How do I participate in a lottery?
+                  <AccordionItem value="how-to-participate" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
+                      How do I participate in a raffle?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-3 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
                       <p>
-                        To participate in a lottery, simply connect your wallet and click "Buy Ticket" on
-                        any active lottery card. You'll need:
+                        To participate in a raffle, simply connect your wallet and click "Buy Ticket" on
+                        any active raffle card. You'll need:
                       </p>
                       <ul className="ml-5 list-disc space-y-1">
                         <li>ETH in your wallet to pay for the ticket price</li>
@@ -204,7 +204,7 @@ export default function FYIPage() {
                       <div className="mt-3">
                         <p className="font-semibold text-white mb-1">Multiple Tickets</p>
                         <p className="text-sm">
-                          If a lottery allows multiple entries, you can buy multiple tickets at once by
+                          If a raffle allows multiple entries, you can buy multiple tickets at once by
                           entering the desired quantity. This increases your chances of winning!
                         </p>
                       </div>
@@ -214,20 +214,20 @@ export default function FYIPage() {
                           Important Notes
                         </p>
                         <ul className="text-sm ml-5 list-disc space-y-1">
-                          <li>Each lottery ticket is a separate transaction on the blockchain</li>
-                          <li>You can view your tickets in the "My Lotteries" tab</li>
-                          <li>Once a lottery ends, you cannot buy more tickets</li>
+                          <li>Each raffle ticket is a separate transaction on the blockchain</li>
+                          <li>You can view your tickets in the "My Raffles" tab</li>
+                          <li>Once a raffle ends, you cannot buy more tickets</li>
                           <li>All transactions are permanent and cannot be reversed</li>
                         </ul>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="how-winners-selected" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="how-winners-selected" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       How are winners selected?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-3 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
                       <p>
                         Winners are selected using on-chain randomness that combines multiple sources to ensure fairness and unpredictability.
                       </p>
@@ -237,7 +237,7 @@ export default function FYIPage() {
                           <li><strong>Block Timestamp:</strong> Current block's timestamp (unpredictable)</li>
                           <li><strong>Block Prevrandao:</strong> Ethereum's built-in randomness (EIP-4399)</li>
                           <li><strong>Block Number:</strong> Current block number (sequential)</li>
-                          <li><strong>Lottery ID:</strong> Unique identifier for each lottery</li>
+                          <li><strong>Raffle ID:</strong> Unique identifier for each raffle</li>
                           <li><strong>Selection Index:</strong> Which winner is being selected (for multiple winners)</li>
                         </ul>
                         <p className="text-sm mt-2">
@@ -248,7 +248,7 @@ export default function FYIPage() {
                       <div>
                         <p className="font-semibold text-white mb-2">Multiple Winners</p>
                         <p className="text-sm">
-                          When a lottery has multiple winners, each winner is selected independently using the
+                          When a raffle has multiple winners, each winner is selected independently using the
                           same random process. The selection algorithm ensures no duplicate winners and
                           maintains fairness across all participants.
                         </p>
@@ -257,8 +257,8 @@ export default function FYIPage() {
                         <p className="font-semibold text-white mb-2">Prize Distribution</p>
                         <p className="text-sm mb-2">After winners are selected, prizes are distributed automatically:</p>
                         <ol className="ml-5 list-decimal space-y-1 text-sm">
-                          <li>Creator fee is calculated and sent to the lottery creator</li>
-                          <li>Finalization reward is calculated and sent to whoever finalized the lottery (if expired)</li>
+                          <li>Creator fee is calculated and sent to the raffle creator</li>
+                          <li>Finalization reward is calculated and sent to whoever finalized the raffle (if expired)</li>
                           <li>Remaining prize pool is divided equally among all winners</li>
                           <li>Any remainder from division is sent to the first winner</li>
                         </ol>
@@ -269,13 +269,13 @@ export default function FYIPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="how-finalization-works" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="how-finalization-works" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       How does finalization work?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-3 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
                       <p>
-                        A lottery can end in two ways:
+                        A raffle can end in two ways:
                       </p>
                       <ul className="ml-5 list-disc space-y-1">
                         <li><strong>Time Expired:</strong> The end date and time have passed</li>
@@ -287,17 +287,17 @@ export default function FYIPage() {
                           Finalization Reward System
                         </p>
                         <p className="text-sm mb-2">
-                          <strong>For Expired Lotteries:</strong> Anyone can finalize an expired lottery, and
+                          <strong>For Expired Raffles:</strong> Anyone can finalize an expired raffle, and
                           the pool pays a reward to cover gas costs:
                         </p>
                         <ul className="text-sm ml-5 list-disc space-y-1">
                           <li><strong>Reward Amount:</strong> 0.001-0.01 ETH (or 0.1% of pool, whichever is higher, capped at 0.01 ETH)</li>
-                          <li><strong>Purpose:</strong> Covers the gas fee for finalizing the lottery</li>
-                          <li><strong>Who Pays:</strong> The reward comes from the lottery pool, so participants effectively pay for finalization</li>
-                          <li><strong>Incentive:</strong> This ensures someone will always finalize expired lotteries, even if the creator is unavailable</li>
+                          <li><strong>Purpose:</strong> Covers the gas fee for finalizing the raffle</li>
+                          <li><strong>Who Pays:</strong> The reward comes from the raffle pool, so participants effectively pay for finalization</li>
+                          <li><strong>Incentive:</strong> This ensures someone will always finalize expired raffles, even if the creator is unavailable</li>
                         </ul>
                         <p className="text-sm mt-2">
-                          <strong>Example:</strong> If a lottery has 1 ETH in the pool, the finalizer receives
+                          <strong>Example:</strong> If a raffle has 1 ETH in the pool, the finalizer receives
                           0.001 ETH (0.1% of pool, but minimum 0.001 ETH), which covers their gas costs. The
                           remaining 0.999 ETH is distributed to winners and the creator.
                         </p>
@@ -305,7 +305,7 @@ export default function FYIPage() {
                       <div>
                         <p className="font-semibold text-white mb-1">Early Finalization</p>
                         <p className="text-sm">
-                          If a lottery reaches its maximum number of tickets before the end date, only the
+                          If a raffle reaches its maximum number of tickets before the end date, only the
                           creator can finalize it early. No reward is paid in this case - the creator pays
                           their own gas fee.
                         </p>
@@ -320,20 +320,20 @@ export default function FYIPage() {
                           to be sent. However, the reward system ensures:
                         </p>
                         <ul className="text-sm ml-5 list-disc space-y-1">
-                          <li>Someone will always finalize expired lotteries (they get rewarded)</li>
+                          <li>Someone will always finalize expired raffles (they get rewarded)</li>
                           <li>The pool pays for finalization (not the finalizer)</li>
-                          <li>Lotteries won't get stuck if the creator is unavailable</li>
+                          <li>Raffles won't get stuck if the creator is unavailable</li>
                           <li>The system is decentralized and trustless</li>
                         </ul>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="is-it-secure" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="is-it-secure" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       Is it secure and fair?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-3 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-3 px-6 pb-6 pt-2">
                       <p>
                         Yes! LuckyChain is designed with security and fairness as top priorities.
                       </p>
@@ -356,7 +356,7 @@ export default function FYIPage() {
                           <li>Block timestamp (determined by miners/validators)</li>
                           <li>Block prevrandao (Ethereum's built-in randomness)</li>
                           <li>Block number (sequential and predictable)</li>
-                          <li>Lottery ID (unique per lottery)</li>
+                          <li>Raffle ID (unique per raffle)</li>
                         </ul>
                         <p className="text-sm mt-2">
                           Since these values are determined at finalization time, neither the creator nor
@@ -366,28 +366,28 @@ export default function FYIPage() {
                       <div>
                         <p className="font-semibold text-white mb-1">Verification</p>
                         <p className="text-sm">
-                          All lottery data, transactions, and winner selections are permanently recorded on the
-                          Ethereum blockchain. Anyone can verify the fairness of any lottery by examining the
+                          All raffle data, transactions, and winner selections are permanently recorded on the
+                          Ethereum blockchain. Anyone can verify the fairness of any raffle by examining the
                           contract code and transaction history on Etherscan.
                         </p>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="gas-fees" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="gas-fees" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       How much do gas fees cost?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
                         Gas fees vary based on network congestion and transaction complexity. On Ethereum
                         mainnet, they can range from $1-50+ depending on network activity. However, for
-                        expired lotteries, you don't need to worry about gas costs!
+                        expired raffles, you don't need to worry about gas costs!
                       </p>
                       <p>
-                        <strong>Finalization Reward System:</strong> When you finalize an expired lottery,
+                        <strong>Finalization Reward System:</strong> When you finalize an expired raffle,
                         the pool automatically pays you a reward (0.001-0.01 ETH) that covers your gas
-                        costs. This reward comes from the lottery pool, so participants effectively pay for
+                        costs. This reward comes from the raffle pool, so participants effectively pay for
                         finalization, not you.
                       </p>
                       <p>
@@ -395,20 +395,20 @@ export default function FYIPage() {
                         testnet ETH has no real value. You can test the platform without any real costs.
                       </p>
                       <p>
-                        <strong>Regular Transactions:</strong> For buying tickets or creating lotteries, you
+                        <strong>Regular Transactions:</strong> For buying tickets or creating raffles, you
                         pay gas fees like any other blockchain transaction. The gas fee depends on current
                         network conditions.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="multiple-winners" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="multiple-winners" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       How are multiple winners selected?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
-                        When a lottery has multiple winners, each winner is selected independently using the
+                        When a raffle has multiple winners, each winner is selected independently using the
                         same random process. The selection algorithm uses the Fisher-Yates shuffle to ensure
                         fairness and prevent duplicate selections.
                       </p>
@@ -428,51 +428,51 @@ export default function FYIPage() {
                         integer division is sent to the first winner to ensure no funds are lost.
                       </p>
                       <p>
-                        <strong>Example:</strong> If a lottery has 100 participants, 3 winners, and a prize
+                        <strong>Example:</strong> If a raffle has 100 participants, 3 winners, and a prize
                         pool of 1 ETH, each winner receives 0.33 ETH, and the first winner receives an
                         additional 0.01 ETH (the remainder).
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="creator-fee" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="creator-fee" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       What is the creator fee?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
-                        The creator fee is a percentage of the prize pool that goes to the lottery creator
-                        as compensation for creating and managing the lottery. This fee is set when creating
-                        the lottery and can range from 0% to 100%.
+                        The creator fee is a percentage of the prize pool that goes to the raffle creator
+                        as compensation for creating and managing the raffle. This fee is set when creating
+                        the raffle and can range from 0% to 100%.
                       </p>
                       <p>
                         <strong>How it works:</strong>
                       </p>
                       <ul className="ml-6 list-disc space-y-1">
-                        <li>The creator sets the fee percentage when creating the lottery</li>
+                        <li>The creator sets the fee percentage when creating the raffle</li>
                         <li>The fee is calculated from the total prize pool (sum of all ticket purchases)</li>
                         <li>Creator receives: <code className="bg-muted px-1 rounded">pool × creator_fee% / 100</code></li>
                         <li>Winners receive: <code className="bg-muted px-1 rounded">(pool - creator_fee - finalization_reward) / number_of_winners</code></li>
                       </ul>
                       <p>
-                        <strong>Example:</strong> If a lottery has a prize pool of 10 ETH, a creator fee of
+                        <strong>Example:</strong> If a raffle has a prize pool of 10 ETH, a creator fee of
                         5%, and 2 winners, the creator receives 0.5 ETH, and each winner receives
                         approximately 4.75 ETH (after finalization reward if applicable).
                       </p>
                       <p>
-                        <strong>Transparency:</strong> The creator fee is displayed on each lottery card, so
+                        <strong>Transparency:</strong> The creator fee is displayed on each raffle card, so
                         participants know exactly how much goes to the creator before participating.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="no-participants" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="no-participants" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       What happens if no one participates?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
-                        If a lottery expires with no participants, the lottery cannot be finalized because
+                        If a raffle expires with no participants, the raffle cannot be finalized because
                         the smart contract requires at least one participant to select winners. In this
                         case:
                       </p>
@@ -486,7 +486,7 @@ export default function FYIPage() {
                           the creator fee is zero
                         </li>
                         <li>
-                          <strong>Lottery remains inactive:</strong> The lottery simply ends with no
+                          <strong>Raffle remains inactive:</strong> The raffle simply ends with no
                           participants and no winners
                         </li>
                         <li>
@@ -495,26 +495,26 @@ export default function FYIPage() {
                         </li>
                       </ul>
                       <p>
-                        <strong>Important:</strong> This scenario is different from a lottery with
-                        participants but no winners selected. If a lottery has participants but hasn't been
+                        <strong>Important:</strong> This scenario is different from a raffle with
+                        participants but no winners selected. If a raffle has participants but hasn't been
                         finalized yet, anyone can finalize it (even if expired) to select winners and
                         distribute prizes.
                       </p>
                       <p>
                         <strong>Best Practice:</strong> To avoid this situation, creators should promote
-                        their lotteries to attract participants before the end date.
+                        their raffles to attract participants before the end date.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="finalization-reward" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="finalization-reward" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       Who gets the finalization reward?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
                         The finalization reward (0.001-0.01 ETH) is paid to whoever finalizes an expired
-                        lottery. This reward comes from the lottery pool and is designed to cover gas costs
+                        raffle. This reward comes from the raffle pool and is designed to cover gas costs
                         and incentivize finalization.
                       </p>
                       <p>
@@ -531,7 +531,7 @@ export default function FYIPage() {
                       </p>
                       <ul className="ml-6 list-disc space-y-1">
                         <li>
-                          <strong>Expired lotteries:</strong> Anyone can finalize and receive the reward
+                          <strong>Expired raffles:</strong> Anyone can finalize and receive the reward
                         </li>
                         <li>
                           <strong>Early finalization:</strong> Only the creator can finalize when max
@@ -539,7 +539,7 @@ export default function FYIPage() {
                         </li>
                       </ul>
                       <p>
-                        <strong>Why this system:</strong> The reward system ensures that expired lotteries
+                        <strong>Why this system:</strong> The reward system ensures that expired raffles
                         can always be finalized, even if the creator is unavailable. The pool pays for
                         finalization, so participants effectively share the cost, making the system fully
                         decentralized and resilient.
@@ -547,11 +547,11 @@ export default function FYIPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="can-creator-cheat" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="can-creator-cheat" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       Can the creator cheat or manipulate results?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
                         <strong>No, the creator cannot cheat or manipulate results.</strong> The winner
                         selection uses on-chain randomness that cannot be predicted or manipulated by
@@ -571,7 +571,7 @@ export default function FYIPage() {
                           <strong>Block number:</strong> Current block number (sequential)
                         </li>
                         <li>
-                          <strong>Lottery ID:</strong> Unique identifier for each lottery
+                          <strong>Raffle ID:</strong> Unique identifier for each raffle
                         </li>
                         <li>
                           <strong>Selection index:</strong> Which winner is being selected (for multiple
@@ -582,7 +582,7 @@ export default function FYIPage() {
                         These values are combined using the <code className="bg-muted px-1 rounded">keccak256</code> hash function at
                         finalization time. Since block data is determined by miners/validators and cannot
                         be predicted in advance, even the creator cannot know who will win until the
-                        lottery is finalized.
+                        raffle is finalized.
                       </p>
                       <p>
                         <strong>Verification:</strong> All code is open-source and verifiable on the
@@ -591,20 +591,20 @@ export default function FYIPage() {
                       </p>
                       <p>
                         <strong>No special privileges:</strong> The creator has no special permissions or
-                        admin functions. They cannot change lottery parameters after creation, cannot
+                        admin functions. They cannot change raffle parameters after creation, cannot
                         withdraw funds prematurely, and cannot influence winner selection.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="what-if-creator-disappears" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="what-if-creator-disappears" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       What if the creator disappears or loses their wallet?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
                         <strong>Don't worry!</strong> The system is designed to be fully decentralized and
-                        resilient. Even if the creator disappears or loses their wallet, expired lotteries
+                        resilient. Even if the creator disappears or loses their wallet, expired raffles
                         can still be finalized.
                       </p>
                       <p>
@@ -612,7 +612,7 @@ export default function FYIPage() {
                       </p>
                       <ul className="ml-6 list-disc space-y-1">
                         <li>
-                          <strong>Anyone can finalize:</strong> For expired lotteries, anyone can finalize
+                          <strong>Anyone can finalize:</strong> For expired raffles, anyone can finalize
                           them (not just the creator)
                         </li>
                         <li>
@@ -629,7 +629,7 @@ export default function FYIPage() {
                         </li>
                       </ul>
                       <p>
-                        <strong>Early finalization:</strong> If a lottery reaches max tickets before the
+                        <strong>Early finalization:</strong> If a raffle reaches max tickets before the
                         end date, only the creator can finalize it early. However, if the creator is
                         unavailable, participants can simply wait until the end date, at which point anyone
                         can finalize it.
@@ -647,14 +647,14 @@ export default function FYIPage() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="multiple-tickets" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="multiple-tickets" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       Does buying multiple tickets increase my chances?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
                         <strong>Yes! Buying multiple tickets increases your chances of winning.</strong>
-                        Each ticket gives you one entry into the lottery, so more tickets = more chances.
+                        Each ticket gives you one entry into the raffle, so more tickets = more chances.
                       </p>
                       <p>
                         <strong>How it works:</strong>
@@ -662,19 +662,19 @@ export default function FYIPage() {
                       <ul className="ml-6 list-disc space-y-1">
                         <li>
                           <strong>Each ticket = one entry:</strong> If you buy 10 tickets, you have 10
-                          entries in the lottery
+                          entries in the raffle
                         </li>
                         <li>
                           <strong>Independent selection:</strong> Each ticket has an equal chance of being
                           selected, so buying more tickets multiplies your chances
                         </li>
                         <li>
-                          <strong>Multiple winners possible:</strong> If a lottery has multiple winners,
-                          you could potentially win multiple times (if the lottery allows it)
+                          <strong>Multiple winners possible:</strong> If a raffle has multiple winners,
+                          you could potentially win multiple times (if the raffle allows it)
                         </li>
                       </ul>
                       <p>
-                        <strong>Example:</strong> If a lottery has 100 participants and 1 winner:
+                        <strong>Example:</strong> If a raffle has 100 participants and 1 winner:
                       </p>
                       <ul className="ml-6 list-disc space-y-1">
                         <li>1 ticket = 1% chance of winning</li>
@@ -686,33 +686,33 @@ export default function FYIPage() {
                       </p>
                       <ul className="ml-6 list-disc space-y-1">
                         <li>
-                          <strong>Multiple entries allowed:</strong> The lottery must allow multiple
-                          entries (this is set when creating the lottery)
+                          <strong>Multiple entries allowed:</strong> The raffle must allow multiple
+                          entries (this is set when creating the raffle)
                         </li>
                         <li>
-                          <strong>Single entry lotteries:</strong> Some lotteries restrict participants to
+                          <strong>Single entry raffles:</strong> Some raffles restrict participants to
                           one ticket each to ensure fairness
                         </li>
                         <li>
-                          <strong>Max tickets limit:</strong> If a lottery has a max tickets limit, you
+                          <strong>Max tickets limit:</strong> If a raffle has a max tickets limit, you
                           cannot buy more tickets than available
                         </li>
                       </ul>
                       <p>
                         <strong>Cost vs. Benefit:</strong> While buying more tickets increases your
-                        chances, it also increases your cost. Consider your budget and the lottery's prize
+                        chances, it also increases your cost. Consider your budget and the raffle's prize
                         pool when deciding how many tickets to buy.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="when-do-i-get-paid" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="when-do-i-get-paid" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       When do winners receive their prizes?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
-                        <strong>Prizes are distributed automatically and instantly</strong> when the lottery
+                        <strong>Prizes are distributed automatically and instantly</strong> when the raffle
                         is finalized. There's no waiting period, no manual processing, and no intermediary
                         required.
                       </p>
@@ -722,7 +722,7 @@ export default function FYIPage() {
                       <ol className="ml-6 list-decimal space-y-1">
                         <li>
                           <strong>Finalization triggered:</strong> Someone (creator or anyone for expired
-                          lotteries) calls the finalize function
+                          raffles) calls the finalize function
                         </li>
                         <li>
                           <strong>Winners selected:</strong> The smart contract uses on-chain randomness to
@@ -754,28 +754,28 @@ export default function FYIPage() {
                           after confirmation
                         </li>
                         <li>
-                          <strong>No waiting period:</strong> Unlike traditional lotteries, there's no
+                          <strong>No waiting period:</strong> Unlike traditional raffles, there's no
                           claim period or processing delay
                         </li>
                       </ul>
                       <p>
                         <strong>How to check:</strong> Winners can check their wallet balance or view the
-                        transaction on Etherscan to confirm receipt of prizes. The lottery card will also
-                        show winner addresses once the lottery is finalized.
+                        transaction on Etherscan to confirm receipt of prizes. The raffle card will also
+                        show winner addresses once the raffle is finalized.
                       </p>
                       <p>
-                        <strong>Multiple winners:</strong> If a lottery has multiple winners, all winners
+                        <strong>Multiple winners:</strong> If a raffle has multiple winners, all winners
                         receive their prizes in the same transaction. The prize pool is divided equally
                         among all winners, with any remainder going to the first winner.
                       </p>
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="what-network" className="glass-strong glow-border rounded-xl px-6 border-border/40">
-                    <AccordionTrigger className="text-left text-lg font-semibold !no-underline">
+                  <AccordionItem value="what-network" className="glass-strong glow-border rounded-xl border-border/40 overflow-hidden">
+                    <AccordionTrigger className="text-left text-lg font-semibold px-6 !no-underline py-6">
                       Which blockchain network does this use?
                     </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground space-y-2 pt-2">
+                    <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                       <p>
                         LuckyChain is built on Ethereum and is compatible with any Ethereum Virtual
                         Machine (EVM) compatible network. This means it can run on multiple blockchain
@@ -861,7 +861,7 @@ export default function FYIPage() {
                   </Button>
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  Ready to create or join a lottery? Head back to the home page to get started!
+                  Ready to create or join a raffle? Head back to the home page to get started!
                 </p>
               </div>
             </div>

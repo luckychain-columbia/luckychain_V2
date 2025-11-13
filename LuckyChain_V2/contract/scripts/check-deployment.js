@@ -31,7 +31,7 @@ async function main() {
     
     if (!fs.existsSync(chainDir)) {
       console.log('⚠️  No deployment found for this network.');
-      console.log(`   Run: npx hardhat ignition deploy LotteryModule --network ${network}`);
+      console.log(`   Run: npx hardhat ignition deploy RaffleModule --network ${network}`);
       return;
     }
 
@@ -68,7 +68,7 @@ async function main() {
     for (const file of jsonFiles) {
       try {
         const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-        const moduleAddress = data['LotteryModule#Lottery'];
+        const moduleAddress = data['RaffleModule#Raffle'];
         if (moduleAddress) {
           contractAddress = moduleAddress;
           break;
@@ -87,21 +87,21 @@ async function main() {
     console.log(`🌐 Network: ${network} (Chain ID: ${chainId})\n`);
 
     // Connect to contract
-    const Lottery = await ethers.getContractFactory('Lottery');
-    const lottery = Lottery.attach(contractAddress);
+    const Raffle = await ethers.getContractFactory('Raffle');
+    const raffle = Raffle.attach(contractAddress);
 
     // Check contract state
     console.log('📊 Contract State:');
     try {
-      const nextLotteryId = await lottery.nextLotteryId();
-      console.log(`   Next Lottery ID: ${nextLotteryId.toString()}`);
-      console.log(`   Max Creator %: ${(await lottery.MAX_CREATOR_PCT()).toString()}%`);
+      const nextRaffleId = await raffle.nextRaffleId();
+      console.log(`   Next Raffle ID: ${nextRaffleId.toString()}`);
+      console.log(`   Max Creator %: ${(await raffle.MAX_CREATOR_PCT()).toString()}%`);
       
-      // Try to get lottery count (if any exist)
-      if (nextLotteryId > 0n) {
-        console.log(`\n   📋 Found ${nextLotteryId.toString()} lottery(ies) on contract`);
+      // Try to get raffle count (if any exist)
+      if (nextRaffleId > 0n) {
+        console.log(`\n   📋 Found ${nextRaffleId.toString()} raffle(ies) on contract`);
       } else {
-        console.log(`\n   📋 No lotteries created yet`);
+        console.log(`\n   📋 No raffles created yet`);
       }
 
       console.log('\n✅ Contract is deployed and responding correctly!');

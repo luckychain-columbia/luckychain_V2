@@ -67,7 +67,7 @@ if (!address) {
     for (const file of jsonFiles) {
       try {
         const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-        const moduleAddress = data['LotteryModule#Lottery'];
+        const moduleAddress = data['RaffleModule#Raffle'];
         if (moduleAddress) {
           address = moduleAddress;
           console.log(`📍 Found deployed address from Ignition: ${address}`);

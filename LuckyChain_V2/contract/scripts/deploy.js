@@ -7,17 +7,17 @@ async function main() {
   const balance = await deployer.getBalance();
   console.log(`Deployer balance: ${hre.ethers.formatEther(balance)} ETH`);
 
-  const Lottery = await hre.ethers.getContractFactory("Lottery");
-  const lottery = await Lottery.deploy();
-  await lottery.waitForDeployment();
+  const Raffle = await hre.ethers.getContractFactory("Raffle");
+  const raffle = await Raffle.deploy();
+  await raffle.waitForDeployment();
 
-  console.log(`Lottery contract deployed at: ${lottery.target}`);
+  console.log(`Raffle contract deployed at: ${raffle.target}`);
 
   if (hre.network.name === "localhost") {
     console.log("\nSample usage:");
     console.log(
-      "npx hardhat console --network localhost\n> const lottery = await ethers.getContractAt('Lottery', '%s')",
-      lottery.target,
+      "npx hardhat console --network localhost\n> const raffle = await ethers.getContractAt('Raffle', '%s')",
+      raffle.target,
     );
   }
 }

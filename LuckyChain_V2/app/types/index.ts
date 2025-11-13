@@ -1,7 +1,7 @@
-// Type definitions for lottery platform
+// Type definitions for raffle platform
 // Based on old version structure with additions from new version
 
-export interface LotteryData {
+export interface RaffleData {
   creator: string
   title: string
   description: string
@@ -14,14 +14,14 @@ export interface LotteryData {
   totalPool: bigint
 }
 
-export interface LotteryConfig {
+export interface RaffleConfig {
   numWinners: number
   creatorPct: number // basis points (0-10000)
   allowMultipleEntries: boolean
 }
 
-// Extended lottery interface with additional fields (for frontend use)
-export interface Lottery {
+// Extended raffle interface with additional fields (for frontend use)
+export interface Raffle {
   id?: number | string
   title: string
   description?: string
@@ -45,13 +45,13 @@ export interface Lottery {
   allowMultipleEntries: boolean
 }
 
-// User's lottery entries/tickets
+// User's raffle entries/tickets
 export interface Ticket {
   id: string
-  lotteryId: string
-  lotteryTitle: string
+  raffleId: string
+  raffleTitle: string
   entryFee: string
-  ticketCount: number // How many tickets the user has for this lottery
+  ticketCount: number // How many tickets the user has for this raffle
   prizePercentage?: number
   numberOfWinners?: number
   endDate: string
@@ -61,7 +61,7 @@ export interface Ticket {
 }
 
 // Summary interface for efficient data retrieval (matches old version pattern)
-export interface LotterySummary {
+export interface RaffleSummary {
   id: bigint | number
   title: string
   entryFee: bigint

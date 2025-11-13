@@ -45,7 +45,7 @@ function extractAddressFromFile(filePath, moduleName) {
     }
 
     if (data && typeof data === "object") {
-      const exactKey = `${moduleName}#Lottery`;
+      const exactKey = `${moduleName}#Raffle`;
       if (data[exactKey]) {
         return data[exactKey];
       }
@@ -75,7 +75,7 @@ function updateEnvFile(envPath, address) {
   }
 
   const lines = content.split(/\r?\n/).filter(Boolean);
-  const key = "NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS";
+  const key = "NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS";
   const newLine = `${key}=${address}`;
   const existingIndex = lines.findIndex((line) => line.startsWith(`${key}=`));
 
@@ -89,7 +89,7 @@ function updateEnvFile(envPath, address) {
 }
 
 async function main() {
-  const moduleName = getArg("--module", "LotteryModule");
+  const moduleName = getArg("--module", "RaffleModule");
   const network = getArg("--network", "sepolia");
   const chainIdArg = getArg("--chain-id", NETWORK_CHAIN_IDS[network] || network);
   const chainId = String(chainIdArg);

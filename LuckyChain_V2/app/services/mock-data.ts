@@ -1,10 +1,10 @@
-// Mock lottery data for development/testing
-// Extracted from lottery-service.ts for better organization
+// Mock raffle data for development/testing
+// Extracted from raffle-service.ts for better organization
 
 import { parseEther } from "../utils"
-import type { LotteryData } from "@/lib/web3"
+import type { RaffleData } from "@/lib/web3"
 
-type MockLottery = LotteryData & {
+type MockRaffle = RaffleData & {
   id: number
   participants?: string[]
   winners?: string[]
@@ -13,12 +13,12 @@ type MockLottery = LotteryData & {
   allowMultipleEntries: boolean
 }
 
-export const MOCK_LOTTERIES: MockLottery[] = [
+export const MOCK_RAFFLES: MockRaffle[] = [
   {
     id: 0,
     creator: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     title: "Mega Jackpot Draw (Demo)",
-    description: "Win big in our flagship lottery with a massive prize pool. Draw happens when all tickets are sold!",
+    description: "Win big in our flagship raffle with a massive prize pool. Draw happens when all tickets are sold!",
     ticketPrice: parseEther("0.05"),
     maxTickets: BigInt(100),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 5),
@@ -35,8 +35,8 @@ export const MOCK_LOTTERIES: MockLottery[] = [
   {
     id: 1,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
-    title: "Quick Draw Lottery (Demo)",
-    description: "Fast-paced lottery with affordable tickets. Perfect for trying your luck!",
+    title: "Quick Draw Raffle (Demo)",
+    description: "Fast-paced raffle with affordable tickets. Perfect for trying your luck!",
     ticketPrice: parseEther("0.01"),
     maxTickets: BigInt(50),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 2),
@@ -53,7 +53,7 @@ export const MOCK_LOTTERIES: MockLottery[] = [
   {
     id: 2,
     creator: "0x1234567890123456789012345678901234567890",
-    title: "Community Lottery (Demo)",
+    title: "Community Raffle (Demo)",
     description: "Support the community while winning prizes. 10% goes to charity!",
     ticketPrice: parseEther("0.02"),
     maxTickets: BigInt(200),
@@ -90,7 +90,7 @@ export const MOCK_LOTTERIES: MockLottery[] = [
     id: 4,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Premium Prize Pool (Demo)",
-    description: "High stakes lottery for serious players. Massive rewards await!",
+    description: "High stakes raffle for serious players. Massive rewards await!",
     ticketPrice: parseEther("0.1"),
     maxTickets: BigInt(50),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 10),
@@ -108,7 +108,7 @@ export const MOCK_LOTTERIES: MockLottery[] = [
     id: 5,
     creator: "0x1234567890123456789012345678901234567890",
     title: "Midnight Madness (Demo)",
-    description: "Late night lottery ending at midnight. Get your tickets now!",
+    description: "Late night raffle ending at midnight. Get your tickets now!",
     ticketPrice: parseEther("0.03"),
     maxTickets: BigInt(80),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 43200),
@@ -126,7 +126,7 @@ export const MOCK_LOTTERIES: MockLottery[] = [
     id: 6,
     creator: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
     title: "Weekend Special (Demo)",
-    description: "Completed lottery - congratulations to the winner!",
+    description: "Completed raffle - congratulations to the winner!",
     ticketPrice: parseEther("0.03"),
     maxTickets: BigInt(75),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400),
@@ -162,7 +162,7 @@ export const MOCK_LOTTERIES: MockLottery[] = [
     id: 8,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Flash Friday (Demo)",
-    description: "24-hour flash lottery that ended last week. Winner claimed 1.5 ETH!",
+    description: "24-hour flash raffle that ended last week. Winner claimed 1.5 ETH!",
     ticketPrice: parseEther("0.025"),
     maxTickets: BigInt(60),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 5),
@@ -180,7 +180,7 @@ export const MOCK_LOTTERIES: MockLottery[] = [
     id: 9,
     creator: "0x1234567890123456789012345678901234567890",
     title: "Spring Jackpot (Demo)",
-    description: "Seasonal lottery that concluded with great prizes distributed!",
+    description: "Seasonal raffle that concluded with great prizes distributed!",
     ticketPrice: parseEther("0.04"),
     maxTickets: BigInt(120),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 14),

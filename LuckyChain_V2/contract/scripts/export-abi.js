@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const artifactsPath = path.join(__dirname, '../artifacts/contracts/Lottery.sol/Lottery.json');
+const artifactsPath = path.join(__dirname, '../artifacts/contracts/Raffle.sol/Raffle.json');
 const frontendAbiPath = path.join(__dirname, '../../lib/contract-abi.json');
 const frontendAbiTsPath = path.join(__dirname, '../../lib/contract-abi.ts');
 
@@ -35,7 +35,7 @@ try {
   // Export as TypeScript for better type safety
   const abiTs = `// Auto-generated from Hardhat compilation
 // Run "npm run export:abi" after compiling contracts
-export const LOTTERY_ABI = ${JSON.stringify(abi, null, 2)} as const;
+export const RAFFLE_ABI = ${JSON.stringify(abi, null, 2)} as const;
 `;
   fs.writeFileSync(frontendAbiTsPath, abiTs);
   console.log(`✅ ABI exported to ${frontendAbiTsPath}`);
