@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import type { ContractRaffle } from "@/app/services/contract"
 import { formatEther, shortenAddress } from "@/app/utils"
-import { Clock, Users, Trophy, Coins } from "lucide-react"
+import { Clock, Users, Trophy, Coins, ExternalLink } from "lucide-react"
 import { useState, useEffect, useMemo, useCallback, memo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import useContract from "@/app/services/contract"
 import { useWeb3 } from "@/app/context/Web3Context"
 import { extractErrorMessage } from "@/app/services/contract-utils"
+import Link from "next/link"
 
 interface RaffleCardProps {
   raffle: ContractRaffle
@@ -393,9 +394,17 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
 
           {/* Title + Description */}
           <div className="space-y-2">
-            <h3 className="text-2xl font-semibold tracking-tight text-foreground truncate">
-              {raffle.title}
-            </h3>
+            <Link 
+              href={`/raffle/${raffle.id}`}
+              className="group/title block hover:opacity-80 transition-opacity"
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-semibold tracking-tight text-foreground truncate group-hover/title:text-primary transition-colors">
+                  {raffle.title}
+                </h3>
+                <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0" />
+              </div>
+            </Link>
             <p className="text-sm text-muted-foreground text-pretty leading-relaxed line-clamp-3 h-[4.5rem]">
               {raffle.description}
             </p>

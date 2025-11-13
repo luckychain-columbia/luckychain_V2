@@ -27,3 +27,28 @@ export const formatEther = (value: bigint): string => {
 export const parseEther = (value: string): bigint => {
   return ethers.parseEther(value)
 }
+
+/**
+ * Calculate time remaining until raffle ends
+ */
+export const getTimeRemaining = (endDate: number | bigint): string => {
+  const endTimestamp = typeof endDate === "bigint" ? Number(endDate) : endDate
+  const now = Math.floor(Date.now() / 1000)
+  const diff = endTimestamp - now
+
+  if (diff <= 0) return "Closed"
+
+  const hours = Math.floor(diff / 3600)
+  const minutes = Math.floor((diff % 3600) / 60)
+  const seconds = diff % 60
+
+  // Readable format
+  if (hours > 24) {
+    const days = Math.floor(hours / 24)
+    const remHours = hours % 24
+    return `${days}d ${remHours}h`
+  }
+  if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes > 0) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
+}
