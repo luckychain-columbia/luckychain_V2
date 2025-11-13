@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import type { ContractRaffle } from "@/app/services/contract"
 import { formatEther, shortenAddress } from "@/app/utils"
-import { Clock, Users, Trophy, Coins, ExternalLink } from "lucide-react"
+import { Clock, Users, Trophy, Coins, ExternalLink, Copy, Check } from "lucide-react"
 import { useState, useEffect, useMemo, useCallback, memo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import useContract from "@/app/services/contract"
@@ -24,6 +24,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
   const [participants, setParticipants] = useState<string[]>([])
   const [winners, setWinners] = useState<string[]>(raffle.winners ?? [])
   const [ticketCount, setTicketCount] = useState<number>(1)
+  const [copied, setCopied] = useState(false)
   const { toast } = useToast()
   const { buyTicket, getParticipants, getWinners, selectWinner } = useContract()
   const { account } = useWeb3()
@@ -374,22 +375,50 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
       <div className="p-7 pb-0 flex flex-col flex-1 min-h-0 gap-6">
         {/* Header */}
         <div className="space-y-3 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            {isActuallyEnded ? (
-              <Badge variant="secondary" className="glass shadow-lg text-gray-400">
-                <Trophy className="mr-1.5 h-3.5 w-3.5" />
-                {raffle.isCompleted ? "Ended" : "Expired"}
-              </Badge>
-            ) : raffle.isActive ? (
-              <Badge className="glass bg-primary/30 text-primary border-primary/50 shadow-lg shadow-primary/30">
-                <Clock className="mr-1.5 h-3.5 w-3.5" />
-                Active
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="glass">
-                Inactive
-              </Badge>
-            )}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {isActuallyEnded ? (
+                <Badge variant="secondary" className="glass shadow-lg text-gray-400">
+                  <Trophy className="mr-1.5 h-3.5 w-3.5" />
+                  {raffle.isCompleted ? "Ended" : "Expired"}
+                </Badge>
+              ) : raffle.isActive ? (
+                <Badge className="glass bg-primary/30 text-primary border-primary/50 shadow-lg shadow-primary/30">
+                  <Clock className="mr-1.5 h-3.5 w-3.5" />
+                  Active
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="glass">
+                  Inactive
+                </Badge>
+              )}
+            </div>
+            <Button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (typeof window !== "undefined") {
+                  const url = `${window.location.origin}/raffle/${raffle.id}`
+                  navigator.clipboard.writeText(url)
+                  setCopied(true)
+                  toast({
+                    title: "Link copied!",
+                    description: "Raffle link has been copied to your clipboard.",
+                  })
+                  setTimeout(() => setCopied(false), 2000)
+                }
+              }}
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              title="Copy raffle link"
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-primary" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+            </Button>
           </div>
 
           {/* Title + Description */}
