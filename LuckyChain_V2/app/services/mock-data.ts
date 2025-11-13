@@ -1,8 +1,7 @@
 // Mock raffle data for development/testing
-// Extracted from raffle-service.ts for better organization
 
 import { parseEther } from "../utils"
-import type { RaffleData } from "@/lib/web3"
+import type { RaffleData } from "@/app/types"
 
 type MockRaffle = RaffleData & {
   id: number

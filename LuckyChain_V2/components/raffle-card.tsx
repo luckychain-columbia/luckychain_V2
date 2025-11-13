@@ -11,6 +11,7 @@ import { useState, useEffect, useMemo, useCallback, memo } from "react"
 import { useToast } from "@/hooks/use-toast"
 import useContract from "@/app/services/contract"
 import { useWeb3 } from "@/app/context/Web3Context"
+import { extractErrorMessage } from "@/app/services/contract-utils"
 
 interface RaffleCardProps {
   raffle: ContractRaffle
@@ -164,6 +165,11 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
     [ticketsRemaining, desiredTicketCount]
   )
   
+  const exceedsTransactionLimit = useMemo(
+    () => desiredTicketCount > 1000, // Contract MAX_TICKETS_PER_TRANSACTION
+    [desiredTicketCount]
+  )
+  
   const invalidTicketCount = useMemo(
     () => desiredTicketCount < 1,
     [desiredTicketCount]
@@ -199,6 +205,16 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
       toast({
         title: "Invalid quantity",
         description: "Please enter a valid ticket amount (at least 1)",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate ticket count doesn't exceed per-transaction limit (1000)
+    if (exceedsTransactionLimit) {
+      toast({
+        title: "Too many tickets",
+        description: "Cannot purchase more than 1,000 tickets per transaction",
         variant: "destructive",
       })
       return
@@ -243,15 +259,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
       onUpdate?.()
       setTicketCount(1)
     } catch (error: any) {
-      // Extract user-friendly error message
-      let errorMessage = "Failed to purchase ticket"
-      if (error?.message) {
-        errorMessage = error.message
-      } else if (error?.reason) {
-        errorMessage = error.reason
-      } else if (typeof error === "string") {
-        errorMessage = error
-      }
+      const errorMessage = extractErrorMessage(error, "Failed to purchase ticket")
       
       toast({
         title: "Error",
@@ -270,6 +278,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
     raffle.isCompleted,
     invalidTicketCount,
     desiredTicketCount,
+    exceedsTransactionLimit,
     capacityReached,
     exceedsCapacity,
     ticketsRemaining,
@@ -328,15 +337,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
       await Promise.all([loadParticipants(), loadWinners()])
       onUpdate?.()
     } catch (error: any) {
-      // Extract user-friendly error message
-      let errorMessage = "Failed to finalize raffle"
-      if (error?.message) {
-        errorMessage = error.message
-      } else if (error?.reason) {
-        errorMessage = error.reason
-      } else if (typeof error === "string") {
-        errorMessage = error
-      }
+      const errorMessage = extractErrorMessage(error, "Failed to finalize raffle")
       
       toast({
         title: "Error",
@@ -460,7 +461,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
               type="number"
               min={1}
               step={1}
-              max={ticketsRemaining || 10000}
+              max={ticketsRemaining ? Math.min(ticketsRemaining, 1000) : 1000}
               disabled={!allowMultipleEntries || isLoading || capacityReached || hasEnded}
               value={allowMultipleEntries ? ticketCount.toString() : "1"}
               onChange={(event) => {
@@ -474,11 +475,11 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
                 if (isNaN(nextValue) || nextValue < 1 || !Number.isInteger(nextValue)) {
                   return
                 }
-                // Cap at 10,000 tickets max to prevent overflow
-                const maxTicketLimit = 10000
+                // Cap at 1000 tickets per transaction (matches contract MAX_TICKETS_PER_TRANSACTION)
+                const maxTicketsPerTransaction = 1000
                 const upperBound = ticketsRemaining !== undefined 
-                  ? Math.min(ticketsRemaining, maxTicketLimit)
-                  : maxTicketLimit
+                  ? Math.min(ticketsRemaining, maxTicketsPerTransaction)
+                  : maxTicketsPerTransaction
                 const clampedValue = Math.min(Math.max(1, nextValue), upperBound)
                 setTicketCount(clampedValue)
               }}
@@ -494,11 +495,11 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
                   setTicketCount(1)
                   return
                 }
-                // Clamp to available tickets and max limit
-                const maxTicketLimit = 10000
+                // Clamp to available tickets and max limit per transaction (1000)
+                const maxTicketsPerTransaction = 1000
                 const upperBound = ticketsRemaining !== undefined 
-                  ? Math.min(ticketsRemaining, maxTicketLimit)
-                  : maxTicketLimit
+                  ? Math.min(ticketsRemaining, maxTicketsPerTransaction)
+                  : maxTicketsPerTransaction
                 const clampedValue = Math.min(Math.max(1, parsedValue), upperBound)
                 setTicketCount(clampedValue)
               }}

@@ -4,10 +4,21 @@ import { useMemo } from "react"
 import { ethers } from "ethers"
 import { useWeb3 } from "../context/Web3Context"
 import { RAFFLE_ABI } from "@/lib/contract-abi"
-import { RAFFLE_CONTRACT_ADDRESS, type RaffleData, formatEther } from "@/lib/web3"
-import { parseEther } from "../utils"
+import { RAFFLE_CONTRACT_ADDRESS, isWeb3Available } from "@/lib/web3"
+import type { RaffleData } from "@/app/types"
+import { formatEther, parseEther } from "../utils"
 import { MOCK_RAFFLES } from "./mock-data"
 import { contractCache, cacheKeys } from "@/lib/contract-cache"
+import {
+  extractErrorMessage,
+  waitForTransaction,
+  validateReceipt,
+  extractRaffleIdFromReceipt,
+  validateAndParseEther,
+  validateTicketCount,
+  checkOverflow,
+  invalidateRaffleCreationCache,
+} from "./contract-utils"
 
 export type ContractRaffle = RaffleData & {
   id: number
@@ -24,11 +35,10 @@ const useContract = () => {
   const { provider, account } = useWeb3()
 
   return useMemo(() => {
-    const isWeb3Available = () => typeof window !== "undefined" && typeof window.ethereum !== "undefined"
-
     const getContractAddress = () => {
-      const address = process.env.NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS || RAFFLE_CONTRACT_ADDRESS
-      return address && address !== "0x0000000000000000000000000000000000000000" ? address : null
+      return RAFFLE_CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000" 
+        ? RAFFLE_CONTRACT_ADDRESS 
+        : null
     }
 
     const getContract = async (withSigner = false) => {
@@ -75,7 +85,7 @@ const useContract = () => {
         const count = await contractCache.getOrFetch(
           cacheKeys.raffleCount(),
           async () => Number(await contract.raffleCount()),
-          30000 // Cache count for 30 seconds
+          contractCache.getRaffleCountTTL()
         )
 
         if (count === 0) {
@@ -184,7 +194,7 @@ const useContract = () => {
         const result = raffles.length > 0 ? raffles : MOCK_RAFFLES
 
         // Cache the entire list
-        contractCache.set(cacheKey, result, 10000) // Cache list for 10 seconds
+        contractCache.set(cacheKey, result, contractCache.getRafflesListTTL())
 
         return result
       } catch (error) {
@@ -242,6 +252,7 @@ const useContract = () => {
       if (params.endDateTime > maxEndTime) {
         throw new Error("End date cannot be more than 1 year in the future")
       }
+      // Validate max entrants (matches contract MAX_TICKETS_PER_RAFFLE = 10,000)
       if (params.maxEntrants !== null && params.maxEntrants !== undefined) {
         if (params.maxEntrants < params.numWinners) {
           throw new Error(`Max entrants (${params.maxEntrants}) cannot be less than number of winners (${params.numWinners})`)
@@ -255,16 +266,8 @@ const useContract = () => {
       const maxTickets = params.maxEntrants && params.maxEntrants > 0 ? BigInt(params.maxEntrants) : BigInt(0)
 
       try {
-        // Validate entry fee can be parsed to wei
-        let entryFeeWei: bigint
-        try {
-          entryFeeWei = parseEther(params.entryFee)
-          if (entryFeeWei <= BigInt(0)) {
-            throw new Error("Entry fee must be greater than 0")
-          }
-        } catch (parseError: any) {
-          throw new Error(`Invalid entry fee: ${parseError.message || "Cannot parse to wei"}`)
-        }
+        // Validate and parse entry fee
+        const entryFeeWei = validateAndParseEther(params.entryFee, "entry fee")
         
         const tx = await contract.createRaffle(
           params.title.trim(),
@@ -277,79 +280,30 @@ const useContract = () => {
           params.allowMultipleEntries
         )
 
-        // Wait for transaction with timeout (5 minutes)
-        const receipt = await Promise.race([
-          tx.wait(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Transaction timeout - please check your wallet")), 5 * 60 * 1000)
-          )
-        ]) as any
-        
-        if (!receipt || !receipt.status) {
-          throw new Error("Transaction failed or was reverted")
-        }
+        // Wait for transaction with timeout
+        const receipt = await waitForTransaction(tx.wait())
+        validateReceipt(receipt)
 
         // Extract raffle ID from event
-        const event = receipt.logs?.find((log: any) => {
-          try {
-            const parsed = contract.interface.parseLog(log)
-            return parsed?.name === "RaffleCreated"
-          } catch {
-            return false
-          }
-        })
+        const raffleId = extractRaffleIdFromReceipt(receipt, contract)
 
-        if (event) {
-          try {
-            const parsed = contract.interface.parseLog(event)
-            const raffleId = parsed?.args?.[0]?.toString()
-            if (raffleId !== undefined) {
-              return raffleId
-            }
-          } catch (parseError) {
-            console.warn("Failed to parse RaffleCreated event:", parseError)
-          }
+        // Invalidate cache after creating new raffle
+        invalidateRaffleCreationCache(contractCache, cacheKeys)
+
+        if (raffleId) {
+          return raffleId
         }
 
         // Fallback: try to get raffle count and use that as ID
         try {
           const count = await contract.raffleCount()
-          const raffleId = (Number(count) - 1).toString()
-          
-          // Invalidate cache after creating new raffle
-          contractCache.invalidate(cacheKeys.rafflesList())
-          contractCache.invalidate(cacheKeys.raffleCount())
-          
-          return raffleId
+          return (Number(count) - 1).toString()
         } catch {
           throw new Error("Failed to extract raffle ID from transaction")
         }
       } catch (err: any) {
         console.error("Error creating raffle:", err)
-        
-        // Handle user rejection
-        if (err?.code === 4001 || err?.message?.includes("user rejected") || err?.message?.includes("User denied")) {
-          throw new Error("Transaction was rejected by user")
-        }
-        
-        // Handle transaction timeout
-        if (err?.message?.includes("timeout")) {
-          throw err
-        }
-        
-        // Handle invalid entry fee
-        if (err?.message?.includes("Invalid entry fee")) {
-          throw err
-        }
-        
-        // Handle contract revert with reason
-        if (err?.reason) {
-          throw new Error(err.reason)
-        }
-        
-        // Extract error message
-        const message = err?.message || "Failed to create raffle"
-        throw new Error(message)
+        throw new Error(extractErrorMessage(err, "Failed to create raffle"))
       }
     }
 
@@ -366,10 +320,8 @@ const useContract = () => {
         throw new Error("Please install a Web3 wallet to buy tickets")
       }
 
-      if (ticketCount < 1 || !Number.isInteger(ticketCount)) {
-        throw new Error("Ticket count must be a positive integer")
-      }
-
+      // Validate inputs
+      validateTicketCount(ticketCount)
       if (ticketPriceEth <= 0) {
         throw new Error("Invalid ticket price")
       }
@@ -380,32 +332,15 @@ const useContract = () => {
       }
 
       try {
-        // Validate ticket price can be parsed to wei
-        let ticketPriceWei: bigint
-        try {
-          ticketPriceWei = parseEther(ticketPriceEth.toString())
-          if (ticketPriceWei <= BigInt(0)) {
-            throw new Error("Ticket price must be greater than 0")
-          }
-        } catch (parseError: any) {
-          throw new Error(`Invalid ticket price: ${parseError.message || "Cannot parse to wei"}`)
-        }
-        
-        // Validate ticket count
-        if (ticketCount < 1 || ticketCount > 10000) {
-          throw new Error("Ticket count must be between 1 and 10,000")
-        }
-        if (!Number.isInteger(ticketCount)) {
-          throw new Error("Ticket count must be an integer")
-        }
+        // Validate and parse ticket price
+        const ticketPriceWei = validateAndParseEther(ticketPriceEth.toString(), "ticket price")
         
         // Check for overflow in total value calculation
         const ticketCountBigInt = BigInt(ticketCount)
-        const totalValue = ticketPriceWei * ticketCountBigInt
-        // Check for overflow: if multiplying causes overflow, result will be smaller than one of the operands
-        if (ticketCountBigInt > BigInt(0) && totalValue / ticketCountBigInt !== ticketPriceWei) {
+        if (checkOverflow(ticketPriceWei, ticketCountBigInt)) {
           throw new Error("Ticket count too large - would cause overflow")
         }
+        const totalValue = ticketPriceWei * ticketCountBigInt
         if (totalValue <= BigInt(0)) {
           throw new Error("Invalid total value - would be zero or negative")
         }
@@ -449,50 +384,19 @@ const useContract = () => {
           value: totalValue,
         })
 
-        // Wait for transaction with timeout (5 minutes)
-        const receipt = await Promise.race([
-          tx.wait(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Transaction timeout - please check your wallet")), 5 * 60 * 1000)
-          )
-        ]) as any
-        
-        if (!receipt || !receipt.status) {
-          throw new Error("Transaction failed or was reverted")
-        }
+        // Wait for transaction with timeout
+        const receipt = await waitForTransaction(tx.wait())
+        validateReceipt(receipt)
 
         // Invalidate cache after buying ticket
+        // invalidateRaffle already invalidates all raffle-related caches (info, participants, winners)
+        // but userTickets also matches the pattern, so only invalidateRaffle is needed
         contractCache.invalidateRaffle(raffleId)
-        contractCache.invalidate(cacheKeys.raffleParticipants(raffleId))
-        contractCache.invalidate(cacheKeys.userTickets(raffleId, account))
 
         return receipt
       } catch (err: any) {
         console.error("Error buying ticket:", err)
-        
-        // Handle user rejection
-        if (err?.code === 4001 || err?.message?.includes("user rejected") || err?.message?.includes("User denied")) {
-          throw new Error("Transaction was rejected by user")
-        }
-        
-        // Handle transaction timeout
-        if (err?.message?.includes("timeout")) {
-          throw err
-        }
-        
-        // Handle insufficient balance
-        if (err?.message?.includes("Insufficient balance") || err?.code === "INSUFFICIENT_FUNDS") {
-          throw err
-        }
-        
-        // Handle contract revert
-        if (err?.reason) {
-          throw new Error(err.reason)
-        }
-        
-        // Extract error message
-        const message = err?.message || "Failed to buy ticket"
-        throw new Error(message)
+        throw new Error(extractErrorMessage(err, "Failed to buy ticket"))
       }
     }
 
@@ -513,45 +417,18 @@ const useContract = () => {
       try {
         const tx = await contract.selectWinner(raffleId)
         
-        // Wait for transaction with timeout (5 minutes)
-        const receipt = await Promise.race([
-          tx.wait(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Transaction timeout - please check your wallet")), 5 * 60 * 1000)
-          )
-        ]) as any
-        
-        if (!receipt || !receipt.status) {
-          throw new Error("Transaction failed or was reverted")
-        }
+        // Wait for transaction with timeout
+        const receipt = await waitForTransaction(tx.wait())
+        validateReceipt(receipt)
 
         // Invalidate cache after finalizing raffle
+        // invalidateRaffle already invalidates all raffle-related caches including winners and list
         contractCache.invalidateRaffle(raffleId)
-        contractCache.invalidate(cacheKeys.raffleWinners(raffleId))
-        contractCache.invalidate(cacheKeys.rafflesList()) // Invalidate list since status changed
         
         return receipt
       } catch (err: any) {
         console.error("Error selecting winner:", err)
-        
-        // Handle user rejection
-        if (err?.code === 4001 || err?.message?.includes("user rejected") || err?.message?.includes("User denied")) {
-          throw new Error("Transaction was rejected by user")
-        }
-        
-        // Handle transaction timeout
-        if (err?.message?.includes("timeout")) {
-          throw err
-        }
-        
-        // Handle contract revert with reason
-        if (err?.reason) {
-          throw new Error(err.reason)
-        }
-        
-        // Extract error message
-        const message = err?.message || "Failed to select winner"
-        throw new Error(message)
+        throw new Error(extractErrorMessage(err, "Failed to select winner"))
       }
     }
 

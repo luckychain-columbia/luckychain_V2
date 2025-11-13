@@ -30,6 +30,8 @@ contract Raffle {
     uint256 public nextRaffleId;
 
     uint16 public constant MAX_CREATOR_PCT = 10_000; // 100%
+    uint256 public constant MAX_TICKETS_PER_TRANSACTION = 1000; // Maximum tickets per transaction (prevents DoS)
+    uint256 public constant MAX_TICKETS_PER_RAFFLE = 10_000; // Maximum tickets per raffle
     
     // Finalization reward: 0.001 ETH or 0.1% of pool (whichever is higher, capped at 0.01 ETH)
     // This incentivizes anyone to finalize expired raffles by covering gas costs
@@ -90,7 +92,7 @@ contract Raffle {
         // Validate max tickets if set
         if (_maxTickets > 0) {
             require(_maxTickets >= _numWinners, "Max tickets < num winners");
-            require(_maxTickets <= 10000, "Max tickets too large");
+            require(_maxTickets <= MAX_TICKETS_PER_RAFFLE, "Max tickets too large");
         }
 
         uint256 raffleId = nextRaffleId++;
@@ -135,6 +137,7 @@ contract Raffle {
 
     function buyTickets(uint256 _raffleId, uint256 _ticketCount) public payable {
         require(_ticketCount > 0, "Ticket count must be > 0");
+        require(_ticketCount <= MAX_TICKETS_PER_TRANSACTION, "Too many tickets per transaction");
 
         RaffleInfo storage raffle = raffles[_raffleId];
         RaffleConfig memory config = raffleSettings[_raffleId];

@@ -17,6 +17,8 @@ class ContractCache {
   private readonly DEFAULT_TTL = 10000 // 10 seconds for active data
   private readonly COMPLETED_TTL = Infinity // Never expires for completed raffles
   private readonly PARTICIPANTS_TTL = 5000 // 5 seconds for participants (change frequently)
+  private readonly RAFFLE_COUNT_TTL = 30000 // 30 seconds for raffle count
+  private readonly RAFFLES_LIST_TTL = 10000 // 10 seconds for raffles list
 
   /**
    * Get cached data or fetch if not cached or expired
@@ -108,7 +110,8 @@ class ContractCache {
    */
   invalidateRaffle(raffleId: number): void {
     this.invalidatePattern(`raffle:${raffleId}:.*`)
-    this.invalidate('raffles:list') // Invalidate list cache
+    // Invalidate list cache since raffle state changed
+    this.invalidate('raffles:list')
   }
 
   /**
@@ -152,6 +155,20 @@ class ContractCache {
    */
   getParticipantsTTL(): number {
     return this.PARTICIPANTS_TTL
+  }
+
+  /**
+   * Get TTL for raffle count
+   */
+  getRaffleCountTTL(): number {
+    return this.RAFFLE_COUNT_TTL
+  }
+
+  /**
+   * Get TTL for raffles list
+   */
+  getRafflesListTTL(): number {
+    return this.RAFFLES_LIST_TTL
   }
 }
 

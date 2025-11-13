@@ -19,6 +19,7 @@ import { Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import useContract from "@/app/services/contract"
 import { useWeb3 } from "@/app/context/Web3Context"
+import { extractErrorMessage } from "@/app/services/contract-utils"
 
 interface CreateRaffleDialogProps {
   onSuccess?: () => void
@@ -107,7 +108,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
         throw new Error("Number of winners must be an integer between 1 and 100")
       }
 
-      // Validate max entrants
+      // Validate max entrants (matches contract MAX_TICKETS_PER_RAFFLE = 10,000)
       const maxEntrants =
         formData.maxEntrants.trim().length > 0
           ? (() => {
@@ -117,6 +118,9 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
               }
               if (parsed < numWinners) {
                 throw new Error(`Max entrants (${parsed}) cannot be less than number of winners (${numWinners})`)
+              }
+              if (parsed > 10000) {
+                throw new Error("Max entrants cannot exceed 10,000")
               }
               return parsed
             })()
@@ -155,14 +159,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
       onSuccess?.()
     } catch (error: any) {
       // Extract user-friendly error message
-      let errorMessage = "Failed to create raffle"
-      if (error?.message) {
-        errorMessage = error.message
-      } else if (error?.reason) {
-        errorMessage = error.reason
-      } else if (typeof error === "string") {
-        errorMessage = error
-      }
+      const errorMessage = extractErrorMessage(error, "Failed to create raffle")
       
       toast({
         title: "Error",

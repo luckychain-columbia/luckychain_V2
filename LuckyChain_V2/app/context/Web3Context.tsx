@@ -179,23 +179,16 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 
   // Function to connect to a Web3 wallet
   const connectWallet = async () => {
-    try {
-      setIsConnecting(true)
-      
-      // Check if any Web3 wallet is installed
-      if (typeof window.ethereum === "undefined") {
-        alert("Please install a Web3 wallet (like MetaMask) to use LuckyChain!")
-        return
-      }
-
-      // If multiple wallets detected, we'll show a selection dialog
-      // For now, use the selected provider or default to window.ethereum
-      const providerToUse = selectedProvider || window.ethereum
-
-      await connectWithProvider(providerToUse)
-    } catch (error) {
-      // Error handling is done in connectWithProvider
+    // Check if any Web3 wallet is installed
+    if (typeof window.ethereum === "undefined") {
+      alert("Please install a Web3 wallet (like MetaMask) to use LuckyChain!")
+      return
     }
+
+    // Use the selected provider or default to window.ethereum
+    // Note: Wallet selection dialog is handled in wallet-connect component
+    const providerToUse = selectedProvider || window.ethereum
+    await connectWithProvider(providerToUse)
   }
 
   // Optional: Network switching function (from old version)
