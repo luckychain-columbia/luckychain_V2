@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import type { ContractRaffle } from "@/app/services/contract"
-import { formatEther, shortenAddress } from "@/app/utils"
+import { formatEther, shortenAddress, getRaffleUrl } from "@/app/utils"
 import { Clock, Users, Trophy, Coins, ExternalLink, Copy, Check } from "lucide-react"
 import { useState, useEffect, useMemo, useCallback, memo } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -398,7 +398,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
                 e.preventDefault()
                 e.stopPropagation()
                 if (typeof window !== "undefined") {
-                  const url = `${window.location.origin}/raffle/${raffle.id}`
+                  const url = getRaffleUrl(raffle.id)
                   navigator.clipboard.writeText(url)
                   setCopied(true)
                   toast({

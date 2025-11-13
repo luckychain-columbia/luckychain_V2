@@ -52,3 +52,53 @@ export const getTimeRemaining = (endDate: number | bigint): string => {
   if (minutes > 0) return `${minutes}m ${seconds}s`
   return `${seconds}s`
 }
+
+/**
+ * Get the base path for the application (for GitHub Pages deployment)
+ * Extracts base path from current location by checking the pathname
+ * 
+ * For GitHub Pages: https://luckychain-columbia.github.io/luckychain_V2/raffle/4
+ * - pathname will be: /luckychain_V2/raffle/4
+ * - base path should be: /luckychain_V2
+ * 
+ * For local development: http://localhost:3000/raffle/4
+ * - pathname will be: /raffle/4
+ * - base path should be: "" (empty)
+ */
+export const getBasePath = (): string => {
+  if (typeof window === "undefined") return ""
+  
+  // Get the current pathname (e.g., "/luckychain_V2/raffle/4" or "/raffle/4")
+  const pathname = window.location.pathname
+  
+  // Extract segments from pathname (e.g., "/luckychain_V2/raffle/4" -> ["luckychain_V2", "raffle", "4"])
+  const segments = pathname.split("/").filter(Boolean)
+  
+  // Check if we're on GitHub Pages by checking if the first segment matches the repo name
+  // This works because Next.js sets basePath in production to /luckychain_V2
+  // So any URL on GitHub Pages will have /luckychain_V2 as the first segment
+  if (segments.length > 0 && segments[0] === "luckychain_V2") {
+    return "/luckychain_V2"
+  }
+  
+  // Additional check: if pathname explicitly starts with /luckychain_V2
+  if (pathname.startsWith("/luckychain_V2")) {
+    return "/luckychain_V2"
+  }
+  
+  // In development (localhost) or if deployed to root domain, return empty string
+  return ""
+}
+
+/**
+ * Get the full URL for a raffle, including base path if on GitHub Pages
+ */
+export const getRaffleUrl = (raffleId: number | string): string => {
+  if (typeof window === "undefined") return ""
+  
+  const basePath = getBasePath()
+  const baseUrl = window.location.origin
+  const rafflePath = `/raffle/${raffleId}`
+  
+  return `${baseUrl}${basePath}${rafflePath}`
+}

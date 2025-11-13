@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useWeb3 } from "@/app/context/Web3Context"
 import useContract, { type ContractRaffle } from "@/app/services/contract"
-import { formatEther, shortenAddress, getTimeRemaining } from "@/app/utils"
+import { formatEther, shortenAddress, getTimeRemaining, getRaffleUrl } from "@/app/utils"
 
 interface RaffleDetailClientProps {
   raffleId: number
@@ -74,7 +74,7 @@ export function RaffleDetailClient({ raffleId }: RaffleDetailClientProps) {
 
   const handleCopyLink = useCallback(() => {
     if (typeof window !== "undefined") {
-      const url = `${window.location.origin}/raffle/${raffleId}`
+      const url = getRaffleUrl(raffleId)
       navigator.clipboard.writeText(url)
       setCopied(true)
       toast({
@@ -87,7 +87,7 @@ export function RaffleDetailClient({ raffleId }: RaffleDetailClientProps) {
 
   const handleShare = useCallback(() => {
     if (typeof window !== "undefined" && navigator.share) {
-      const url = `${window.location.origin}/raffle/${raffleId}`
+      const url = getRaffleUrl(raffleId)
       navigator.share({
         title: raffle?.title || "LuckyChain Raffle",
         text: `Check out this raffle: ${raffle?.title}`,
