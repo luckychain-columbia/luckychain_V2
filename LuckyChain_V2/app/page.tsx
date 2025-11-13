@@ -108,18 +108,18 @@ export default function Home() {
 
       <section className="relative">
         <div className="relative container mx-auto px-4 py-20">
-          <nav className="flex items-center justify-between mb-20">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/50 relative z-10">
-                <Trophy className="h-8 w-8 text-white drop-shadow-lg" />
+          <nav className="flex items-center justify-between mb-12 md:mb-20 flex-wrap gap-2 md:gap-0">
+            <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity">
+              <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/50 relative z-10">
+                <Trophy className="h-5 w-5 md:h-8 md:w-8 text-white drop-shadow-lg" />
               </div>
-              <span className="text-3xl font-bold tracking-tight text-white relative z-10">LuckyChain</span>
+              <span className="text-xl md:text-3xl font-bold tracking-tight text-white relative z-10">LuckyChain</span>
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Link href="/fyi">
                 <Button
                   variant="ghost"
-                  className="text-white hover:text-white hover:bg-white/10 hidden md:flex"
+                  className="text-white hover:text-white hover:bg-white/10 text-xs md:text-base px-2 md:px-4"
                 >
                   How It Works
                 </Button>
@@ -127,7 +127,7 @@ export default function Home() {
               <Link href="/developers">
                 <Button
                   variant="ghost"
-                  className="text-white hover:text-white hover:bg-white/10 hidden md:flex"
+                  className="text-white hover:text-white hover:bg-white/10 text-xs md:text-base px-2 md:px-4"
                 >
                   Developers
                 </Button>

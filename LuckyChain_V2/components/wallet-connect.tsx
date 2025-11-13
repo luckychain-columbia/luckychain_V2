@@ -52,17 +52,18 @@ export function WalletConnect() {
           <div className="flex items-center gap-2">
             <Button
               onClick={handleDisconnect}
-              className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+              className="glass-strong glow-border font-semibold text-xs md:text-base h-9 md:h-12 px-3 md:px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
               variant="outline"
             >
-              <LogOut className="mr-2 h-5 w-5" />
-              Disconnect
+              <LogOut className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+              <span className="hidden sm:inline">Disconnect</span>
+              <span className="sm:hidden">Disc</span>
             </Button>
             <Button
               disabled
-              className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white opacity-75 cursor-default"
+              className="glass-strong glow-border font-semibold text-xs md:text-base h-9 md:h-12 px-3 md:px-6 text-white opacity-75 cursor-default"
             >
-              <Wallet className="mr-2 h-5 w-5" />
+              <Wallet className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
               {shortenAddress(account)}
             </Button>
           </div>
@@ -70,10 +71,11 @@ export function WalletConnect() {
           <Button
             onClick={handleConnect}
             disabled={isConnecting}
-            className="glass-strong glow-border font-semibold text-base h-12 px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+            className="glass-strong glow-border font-semibold text-xs md:text-base h-9 md:h-12 px-3 md:px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
           >
-            <Wallet className="mr-2 h-5 w-5" />
-            {isConnecting ? "Connecting..." : "Connect Wallet"}
+            <Wallet className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+            <span className="hidden sm:inline">{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+            <span className="sm:hidden">{isConnecting ? "..." : "Connect"}</span>
           </Button>
         )}
       </div>
