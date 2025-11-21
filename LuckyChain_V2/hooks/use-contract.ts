@@ -5,7 +5,7 @@ import { ethers, formatEther } from "ethers";
 import { useWeb3 } from "../app/context/Web3Context";
 import { RAFFLE_ABI } from "@/lib/contract-abi";
 import { RAFFLE_CONTRACT_ADDRESS, isWeb3Available } from "@/lib/web3";
-import type { RaffleData } from "@/app/types";
+import { ContractRaffle } from "@/app/types";
 import { MOCK_RAFFLES } from "../lib/mock-data";
 import { contractCache, cacheKeys } from "@/lib/contract-cache";
 import {
@@ -18,15 +18,6 @@ import {
   checkOverflow,
   invalidateRaffleCreationCache,
 } from "@/lib/contract-utils";
-
-export type ContractRaffle = RaffleData & {
-  id: number;
-  participants?: string[];
-  winners?: string[];
-  numWinners?: number;
-  creatorPct?: number;
-  allowMultipleEntries?: boolean;
-};
 
 // Contract service hook - matches old version structure
 // Uses React hook pattern for better integration with React components

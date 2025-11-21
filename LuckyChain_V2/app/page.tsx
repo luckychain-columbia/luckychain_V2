@@ -11,7 +11,8 @@ import { Sparkles, Trophy, Shield, Zap } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useWeb3 } from "./context/Web3Context";
-import useContract, { type ContractRaffle } from "../hooks/use-contract";
+import useContract from "@/hooks/use-contract";
+import { ContractRaffle } from "@/app/types";
 
 export default function Home() {
   const [raffles, setRaffles] = useState<ContractRaffle[]>([]);

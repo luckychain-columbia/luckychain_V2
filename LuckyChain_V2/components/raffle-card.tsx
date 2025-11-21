@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import type { ContractRaffle } from "@/hooks/use-contract";
 import { shortenAddress, getRaffleUrl } from "@/lib/utils";
 import {
   Clock,
@@ -22,6 +21,7 @@ import { useWeb3 } from "@/app/context/Web3Context";
 import { extractErrorMessage } from "@/lib/contract-utils";
 import Link from "next/link";
 import { formatEther } from "ethers/utils";
+import { ContractRaffle } from "@/app/types";
 
 interface RaffleCardProps {
   raffle: ContractRaffle;

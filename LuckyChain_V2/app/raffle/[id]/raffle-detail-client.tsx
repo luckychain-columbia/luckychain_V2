@@ -13,7 +13,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useWeb3 } from "@/app/context/Web3Context";
-import useContract, { type ContractRaffle } from "@/hooks/use-contract";
+import useContract from "@/hooks/use-contract";
+import { ContractRaffle } from "@/app/types";
 import { shortenAddress, getTimeRemaining, getRaffleUrl } from "@/lib/utils";
 import { formatEther } from "ethers/utils";
 
