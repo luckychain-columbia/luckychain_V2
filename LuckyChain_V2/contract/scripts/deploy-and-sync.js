@@ -6,8 +6,6 @@
  */
 
 const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -19,7 +17,7 @@ console.log(`🚀 Deploying Raffle contract to ${network}...\n`);
 try {
   // Step 1: Deploy using Ignition
   console.log('📦 Deploying contract with Ignition...');
-  execSync(`npx hardhat ignition deploy RaffleModule --network ${network}`, {
+  execSync(`npx hardhat ignition deploy ./ignition/modules/RaffleModule.js --network ${network}`, {
     stdio: 'inherit',
     cwd: __dirname + '/..'
   });
