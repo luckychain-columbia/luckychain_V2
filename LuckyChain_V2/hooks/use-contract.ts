@@ -34,6 +34,8 @@ const useContract = () => {
     };
 
     const getContract = async (withSigner = false) => {
+      console.log("Network:", await provider?.getNetwork());
+      
       if (!isWeb3Available()) {
         return null;
       }
@@ -43,7 +45,6 @@ const useContract = () => {
         return null;
       }
       // const provider = new ethers.BrowserProvider(window.ethereum);
-      console.log("Network:", await provider.getNetwork());
 
       try {
         const code = await provider.getCode(contractAddress);

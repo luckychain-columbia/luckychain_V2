@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     "Create and participate in provably fair raffles on the Ethereum blockchain",
   generator: "v0.app",
   icons: {
-    icon: "/p_heart.webp",
+    icon: "/luckychain_V2/p_heart.webp",
   },
 };
 
