@@ -42,6 +42,8 @@ const useContract = () => {
       if (!contractAddress || !provider) {
         return null;
       }
+      // const provider = new ethers.BrowserProvider(window.ethereum);
+      console.log("Network:", await provider.getNetwork());
 
       try {
         const code = await provider.getCode(contractAddress);
