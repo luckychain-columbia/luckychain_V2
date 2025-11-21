@@ -6,7 +6,7 @@ import { useWeb3 } from "../app/context/Web3Context";
 import { RAFFLE_ABI } from "@/lib/contract-abi";
 import { RAFFLE_CONTRACT_ADDRESS, isWeb3Available } from "@/lib/web3";
 import { ContractRaffle } from "@/app/types";
-import { MOCK_RAFFLES } from "../lib/mock-data";
+// import { MOCK_RAFFLES } from "../lib/mock-data";
 import { contractCache, cacheKeys } from "@/lib/contract-cache";
 import {
   extractErrorMessage,
@@ -17,6 +17,7 @@ import {
   validateTicketCount,
   checkOverflow,
   invalidateRaffleCreationCache,
+  normalizeLottery,
 } from "@/lib/contract-utils";
 
 // Contract service hook - matches old version structure
@@ -61,147 +62,111 @@ const useContract = () => {
     const loadRaffles = async (): Promise<ContractRaffle[]> => {
       try {
         const contract = await getContract(false);
-        if (!contract) {
-          return MOCK_RAFFLES;
-        }
+        if (!contract) return [];
 
-        // Check cache first
-        const cacheKey = cacheKeys.rafflesList();
-        const cached = contractCache.get<ContractRaffle[]>(cacheKey);
-        if (cached) {
-          return cached;
-        }
-
-        // Get raffle count (with caching)
+        // Get raffle count (with caching) - Check first
         const count = await contractCache.getOrFetch(
           cacheKeys.raffleCount(),
           async () => Number(await contract.raffleCount()),
           contractCache.getRaffleCountTTL()
         );
 
-        if (count === 0) {
-          return MOCK_RAFFLES;
+        if (count === 0) return [];
+
+        //Only return if cached is synced
+        const cacheKey = cacheKeys.rafflesList();
+        const cached = contractCache.get<ContractRaffle[]>(cacheKey);
+
+        if (cached && cached.length === count) {
+          return cached;
         }
 
-        const raffles: ContractRaffle[] = [];
-
-        // Try batch fetch first (more efficient)
-        try {
-          const [infos, configs] = await contract.getRaffles(0, count);
-          const winnerPromises = infos.map(async (_info: any, i: number) => {
-            // Check cache for winners
-            const winnersKey = cacheKeys.raffleWinners(i);
-            return contractCache.getOrFetch(
-              winnersKey,
-              async () => {
-                try {
-                  return await contract.getWinners(i);
-                } catch {
-                  return [] as string[];
-                }
-              },
-              infos[i].isCompleted
-                ? Infinity
-                : contractCache.getRaffleTTL(infos[i].isCompleted)
-            );
-          });
-          const winners = await Promise.all(winnerPromises);
-
-          for (let i = 0; i < infos.length; i++) {
-            const config = configs?.[i];
-            const raffleData = {
-              ...infos[i],
-              id: i,
-              numWinners: Number(config?.numWinners ?? 1),
-              creatorPct: Number(config?.creatorPct ?? 0),
-              allowMultipleEntries: Boolean(
-                config?.allowMultipleEntries ?? false
-              ),
-              winners: winners[i] || [],
-            };
-            raffles.push(raffleData);
-
-            // Cache individual raffle info
-            const raffleInfoKey = cacheKeys.raffleInfo(i);
-            contractCache.set(
-              raffleInfoKey,
-              raffleData,
-              contractCache.getRaffleTTL(infos[i].isCompleted)
-            );
-          }
-        } catch {
-          // Fallback to individual fetches if batch fails
-          const promises = Array.from({ length: count }, async (_, i) => {
-            try {
-              // Check cache for individual raffle
-              const raffleInfoKey = cacheKeys.raffleInfo(i);
-              const cachedRaffle =
-                contractCache.get<ContractRaffle>(raffleInfoKey);
-              if (cachedRaffle) {
-                return cachedRaffle;
-              }
-
-              // Fetch info first to determine if completed
-              const info = await contract.getRaffleInfo(i);
-              const isCompleted = info.isCompleted ?? false;
-
-              const [config, winners] = await Promise.all([
-                contract.getRaffleConfig(i).catch(() => null),
-                contractCache.getOrFetch(
-                  cacheKeys.raffleWinners(i),
-                  async () => {
-                    try {
-                      return await contract.getWinners(i);
-                    } catch {
-                      return [] as string[];
-                    }
-                  },
-                  isCompleted
-                    ? Infinity
-                    : contractCache.getRaffleTTL(isCompleted)
-                ),
-              ]);
-
-              const raffleData = {
-                ...info,
-                id: i,
-                numWinners: Number(config?.numWinners ?? 1),
-                creatorPct: Number(config?.creatorPct ?? 0),
-                allowMultipleEntries: Boolean(
-                  config?.allowMultipleEntries ?? false
-                ),
-                winners: winners || [],
-              };
-
-              // Cache the raffle data
-              contractCache.set(
-                raffleInfoKey,
-                raffleData,
-                contractCache.getRaffleTTL(isCompleted)
-              );
-
-              return raffleData;
-            } catch (error) {
-              console.warn(`Failed to load raffle ${i}:`, error);
-              return null;
-            }
-          });
-
-          const results = await Promise.all(promises);
-          raffles.push(
-            ...results.filter((l): l is ContractRaffle => l !== null)
-          );
-        }
-
-        const result = raffles.length > 0 ? raffles : MOCK_RAFFLES;
+        const raffles =
+          (await loadRafflesBatch(contract, count).catch(() => null)) ??
+          (await loadRafflesIndividually(contract, count));
 
         // Cache the entire list
-        contractCache.set(cacheKey, result, contractCache.getRafflesListTTL());
+        contractCache.set(cacheKey, raffles, contractCache.getRafflesListTTL());
 
-        return result;
+        return raffles.map((l: any, i: number) => normalizeLottery(l, null, i));
       } catch (error) {
         console.error("Failed to load raffles:", error);
-        return MOCK_RAFFLES;
+        return [];
+      }
+    };
+
+    const loadRafflesBatch = async (contract: any, count: number) => {
+      const [infos, configs] = await contract.getRaffles(0, count);
+
+      const winners = await Promise.all(
+        infos.map((_: any, i: number) => getWinners(i))
+      );
+
+      return infos.map((info: any, i: number) => {
+        const raffle: ContractRaffle = {
+          ...info,
+          id: i,
+          numWinners: Number(configs?.[i]?.numWinners ?? 1),
+          creatorPct: Number(configs?.[i]?.creatorPct ?? 0),
+          allowMultipleEntries: Boolean(configs?.[i]?.allowMultipleEntries),
+          winners: winners[i] ?? [],
+        };
+
+        contractCache.set(
+          cacheKeys.raffleInfo(i),
+          raffle,
+          contractCache.getRaffleTTL(info.isCompleted)
+        );
+
+        return raffle;
+      });
+    };
+
+    const loadRafflesIndividually = async (contract: any, count: number) => {
+      const promises = Array.from({ length: count }, (_, i) =>
+        loadRaffleById(contract, i)
+      );
+
+      const results = await Promise.all(promises);
+      return results.filter((x): x is ContractRaffle => x !== null);
+    };
+
+    const loadRaffleById = async (
+      contract: any,
+      id: number
+    ): Promise<ContractRaffle | null> => {
+      try {
+        const infoKey = cacheKeys.raffleInfo(id);
+        const cached = contractCache.get<ContractRaffle>(infoKey);
+        if (cached) return cached;
+
+        const info = await contract.getRaffleInfo(id);
+        const isCompleted = info.isCompleted ?? false;
+
+        const [config, winners] = await Promise.all([
+          contract.getRaffleConfig(id).catch(() => null),
+          getWinners(id),
+        ]);
+
+        const raffleData: ContractRaffle = {
+          ...info,
+          id: id,
+          numWinners: Number(config?.numWinners ?? 1),
+          creatorPct: Number(config?.creatorPct ?? 0),
+          allowMultipleEntries: Boolean(config?.allowMultipleEntries),
+          winners: winners || [],
+        };
+
+        contractCache.set(
+          infoKey,
+          raffleData,
+          contractCache.getRaffleTTL(isCompleted)
+        );
+
+        return raffleData;
+      } catch (err) {
+        console.warn(`Failed to load raffle ${id}:`, err);
+        return null;
       }
     };
 
@@ -448,20 +413,21 @@ const useContract = () => {
         if (provider) {
           try {
             const balance = await provider.getBalance(account);
-            // Estimate gas cost (rough estimate: 100,000 gas * 20 gwei = 0.002 ETH)
-            // This is a conservative estimate - actual gas may vary
-            const estimatedGasCost = ethers.parseEther("0.002"); // 0.002 ETH for gas
-            const totalRequired = totalValue + estimatedGasCost;
-
             if (balance < totalValue) {
               const balanceEth = Number(formatEther(balance));
               const requiredEth = ticketPriceEth * ticketCount;
+
               throw new Error(
                 `Insufficient balance. You have ${balanceEth.toFixed(
                   4
                 )} ETH, but need ${requiredEth.toFixed(4)} ETH for tickets`
               );
             }
+
+            // Estimate gas cost (rough estimate: 100,000 gas * 20 gwei = 0.002 ETH)
+            // This is a conservative estimate - actual gas may vary
+            const estimatedGasCost = ethers.parseEther("0.002"); // 0.002 ETH for gas
+            const totalRequired = totalValue + estimatedGasCost;
 
             // Warn if balance is close to required amount (might not have enough for gas)
             if (balance < totalRequired && balance >= totalValue) {
@@ -547,14 +513,10 @@ const useContract = () => {
       userAddress?: string
     ): Promise<number> => {
       const address = userAddress || account;
-      if (!address) {
-        return 0;
-      }
+      if (!address) return 0;
 
       const contract = await getContract(false);
-      if (!contract) {
-        return 0;
-      }
+      if (!contract) return 0;
 
       try {
         const tickets = await contract.getUserTickets(raffleId, address);
@@ -566,64 +528,48 @@ const useContract = () => {
 
     const getParticipants = async (raffleId: number): Promise<string[]> => {
       const contract = await getContract(false);
-      if (!contract) {
-        const mock = MOCK_RAFFLES.find((l) => l.id === raffleId);
-        return mock?.participants || [];
-      }
+      if (!contract) return [];
 
       // Check cache first
       const cacheKey = cacheKeys.raffleParticipants(raffleId);
+      const ttl = contractCache.getParticipantsTTL();
 
       try {
         return await contractCache.getOrFetch(
           cacheKey,
-          async () => {
-            try {
-              return await contract.getParticipants(raffleId);
-            } catch {
-              const mock = MOCK_RAFFLES.find((l) => l.id === raffleId);
-              return mock?.participants || [];
-            }
-          },
-          contractCache.getParticipantsTTL() // Participants change frequently
+          () => contract.getParticipants(raffleId).catch(() => []),
+          ttl
         );
       } catch {
-        const mock = MOCK_RAFFLES.find((l) => l.id === raffleId);
-        return mock?.participants || [];
+        return [];
       }
     };
 
     const getWinners = async (raffleId: number): Promise<string[]> => {
       const contract = await getContract(false);
-      if (!contract) {
-        const mock = MOCK_RAFFLES.find((l) => l.id === raffleId);
-        return mock?.winners || [];
-      }
+      if (!contract) return [];
 
       // Check cache first
       const cacheKey = cacheKeys.raffleWinners(raffleId);
 
       try {
-        // Try to get raffle info from cache to determine if completed
-        const raffleInfoKey = cacheKeys.raffleInfo(raffleId);
-        const cachedRaffle = contractCache.get<ContractRaffle>(raffleInfoKey);
-        const isCompleted = cachedRaffle?.isCompleted ?? false;
+        // Determine if raffle is completed (use cached info if available)
+        const cachedRaffle = contractCache.get<ContractRaffle>(
+          cacheKeys.raffleInfo(raffleId)
+        );
+        const isCompleted = cachedRaffle?.isCompleted === true;
+
+        const ttl = isCompleted
+          ? Infinity
+          : contractCache.getRaffleTTL(isCompleted);
 
         return await contractCache.getOrFetch(
           cacheKey,
-          async () => {
-            try {
-              return await contract.getWinners(raffleId);
-            } catch {
-              const mock = MOCK_RAFFLES.find((l) => l.id === raffleId);
-              return mock?.winners || [];
-            }
-          },
-          isCompleted ? Infinity : contractCache.getRaffleTTL(isCompleted)
+          () => contract.getWinners(raffleId).catch(() => []),
+          ttl
         );
       } catch {
-        const mock = MOCK_RAFFLES.find((l) => l.id === raffleId);
-        return mock?.winners || [];
+        return [];
       }
     };
 

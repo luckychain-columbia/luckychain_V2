@@ -69,3 +69,40 @@ export const getWalletName = (provider: any): string | null => {
 
   return null;
 };
+
+// Optional: Network switching function (from old version)
+const switchNetwork = async () => {
+  const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  // "0x7a69" is 31337 in hex (Hardhat Localhost)
+  if (chainId !== "0x7a69") {
+    try {
+      // switching to Hardhat Localhost
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x7a69" }],
+      });
+      console.log("Switched to Hardhat Localhost (chainId 31337)");
+    } catch (switchError: any) {
+      // If not added, add the network manually
+      if (switchError.code === 4902) {
+        await window.ethereum.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: "0x7a69", // 31337 in hex
+              chainName: "Hardhat Localhost",
+              rpcUrls: ["http://127.0.0.1:8545"],
+              nativeCurrency: {
+                name: "Ether",
+                symbol: "ETH",
+                decimals: 18,
+              },
+            },
+          ],
+        });
+      } else {
+        throw switchError;
+      }
+    }
+  }
+};

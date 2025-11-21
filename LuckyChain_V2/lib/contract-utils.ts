@@ -3,40 +3,48 @@
  * Extracted to reduce code duplication and improve maintainability
  */
 
-import { ethers } from "ethers"
+import { ContractRaffle } from "@/app/types";
+import { ethers } from "ethers";
 
 /**
  * Extract user-friendly error message from various error types
  * Centralized error handling to reduce code duplication
  */
-export function extractErrorMessage(error: any, defaultMessage: string): string {
+export function extractErrorMessage(
+  error: any,
+  defaultMessage: string
+): string {
   // Handle user rejection
-  if (error?.code === 4001 || 
-      error?.message?.toLowerCase().includes("user rejected") || 
-      error?.message?.toLowerCase().includes("user denied")) {
-    return "Transaction was rejected by user"
+  if (
+    error?.code === 4001 ||
+    error?.message?.toLowerCase().includes("user rejected") ||
+    error?.message?.toLowerCase().includes("user denied")
+  ) {
+    return "Transaction was rejected by user";
   }
-  
+
   // Handle transaction timeout
   if (error?.message?.includes("timeout")) {
-    return error.message
+    return error.message;
   }
-  
+
   // Handle contract revert with reason
   if (error?.reason) {
-    return error.reason
+    return error.reason;
   }
-  
+
   // Handle specific error messages that should be passed through
-  if (error?.message?.includes("Insufficient balance") || 
-      error?.code === "INSUFFICIENT_FUNDS" ||
-      error?.message?.includes("Invalid entry fee") ||
-      error?.message?.includes("Invalid ticket price")) {
-    return error.message
+  if (
+    error?.message?.includes("Insufficient balance") ||
+    error?.code === "INSUFFICIENT_FUNDS" ||
+    error?.message?.includes("Invalid entry fee") ||
+    error?.message?.includes("Invalid ticket price")
+  ) {
+    return error.message;
   }
-  
+
   // Extract error message
-  return error?.message || defaultMessage
+  return error?.message || defaultMessage;
 }
 
 /**
@@ -48,10 +56,14 @@ export async function waitForTransaction(
 ): Promise<any> {
   return Promise.race([
     txPromise,
-    new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Transaction timeout - please check your wallet")), timeoutMs)
-    )
-  ]) as Promise<any>
+    new Promise((_, reject) =>
+      setTimeout(
+        () =>
+          reject(new Error("Transaction timeout - please check your wallet")),
+        timeoutMs
+      )
+    ),
+  ]) as Promise<any>;
 }
 
 /**
@@ -59,7 +71,7 @@ export async function waitForTransaction(
  */
 export function validateReceipt(receipt: any): void {
   if (!receipt || !receipt.status) {
-    throw new Error("Transaction failed or was reverted")
+    throw new Error("Transaction failed or was reverted");
   }
 }
 
@@ -73,40 +85,45 @@ export function extractRaffleIdFromReceipt(
   // Try to extract from event
   const event = receipt.logs?.find((log: any) => {
     try {
-      const parsed = contract.interface.parseLog(log)
-      return parsed?.name === "RaffleCreated"
+      const parsed = contract.interface.parseLog(log);
+      return parsed?.name === "RaffleCreated";
     } catch {
-      return false
+      return false;
     }
-  })
+  });
 
   if (event) {
     try {
-      const parsed = contract.interface.parseLog(event)
-      const raffleId = parsed?.args?.[0]?.toString()
+      const parsed = contract.interface.parseLog(event);
+      const raffleId = parsed?.args?.[0]?.toString();
       if (raffleId !== undefined) {
-        return raffleId
+        return raffleId;
       }
     } catch (parseError) {
-      console.warn("Failed to parse RaffleCreated event:", parseError)
+      console.warn("Failed to parse RaffleCreated event:", parseError);
     }
   }
 
-  return null
+  return null;
 }
 
 /**
  * Validate and parse ether amount
  */
-export function validateAndParseEther(amount: string, fieldName: string = "amount"): bigint {
+export function validateAndParseEther(
+  amount: string,
+  fieldName: string = "amount"
+): bigint {
   try {
-    const wei = ethers.parseEther(amount)
+    const wei = ethers.parseEther(amount);
     if (wei <= BigInt(0)) {
-      throw new Error(`${fieldName} must be greater than 0`)
+      throw new Error(`${fieldName} must be greater than 0`);
     }
-    return wei
+    return wei;
   } catch (parseError: any) {
-    throw new Error(`Invalid ${fieldName}: ${parseError.message || "Cannot parse to wei"}`)
+    throw new Error(
+      `Invalid ${fieldName}: ${parseError.message || "Cannot parse to wei"}`
+    );
   }
 }
 
@@ -117,18 +134,22 @@ export function validateAndParseEther(amount: string, fieldName: string = "amoun
  * @param maxTicketsPerRaffle - Maximum tickets per raffle (default: 10000 to match contract)
  */
 export function validateTicketCount(
-  ticketCount: number, 
+  ticketCount: number,
   maxTicketsPerTransaction: number = 1000,
   maxTicketsPerRaffle: number = 10000
 ): void {
   if (ticketCount < 1 || !Number.isInteger(ticketCount)) {
-    throw new Error("Ticket count must be a positive integer")
+    throw new Error("Ticket count must be a positive integer");
   }
   if (ticketCount > maxTicketsPerTransaction) {
-    throw new Error(`Ticket count cannot exceed ${maxTicketsPerTransaction} per transaction`)
+    throw new Error(
+      `Ticket count cannot exceed ${maxTicketsPerTransaction} per transaction`
+    );
   }
   if (ticketCount > maxTicketsPerRaffle) {
-    throw new Error(`Ticket count cannot exceed ${maxTicketsPerRaffle} per raffle`)
+    throw new Error(
+      `Ticket count cannot exceed ${maxTicketsPerRaffle} per raffle`
+    );
   }
 }
 
@@ -137,10 +158,10 @@ export function validateTicketCount(
  */
 export function checkOverflow(a: bigint, b: bigint): boolean {
   if (a === BigInt(0) || b === BigInt(0)) {
-    return false
+    return false;
   }
-  const product = a * b
-  return product / a !== b
+  const product = a * b;
+  return product / a !== b;
 }
 
 /**
@@ -150,7 +171,41 @@ export function invalidateRaffleCreationCache(
   contractCache: { invalidate: (key: string) => void },
   cacheKeys: { rafflesList: () => string; raffleCount: () => string }
 ): void {
-  contractCache.invalidate(cacheKeys.rafflesList())
-  contractCache.invalidate(cacheKeys.raffleCount())
+  contractCache.invalidate(cacheKeys.rafflesList());
+  contractCache.invalidate(cacheKeys.raffleCount());
 }
 
+// Converts a raw Result from getLotteries() or getLottery() to plain JS
+export function normalizeLottery(
+  info: any,
+  config: any,
+  id: number
+): ContractRaffle {
+  return {
+    // Required UI fields -----------------------
+    id,
+
+    // RaffleInfo
+    creator: info.creator ?? info[0],
+    title: info.title ?? info[1],
+    description: info.description ?? info[2],
+    ticketPrice: BigInt(info.ticketPrice ?? info[3] ?? 0),
+    maxTickets: BigInt(info.maxTickets ?? info[4] ?? 0),
+    endTime: BigInt(info.endTime ?? info[5] ?? 0),
+    isActive: Boolean(info.isActive ?? info[6]),
+    isCompleted: Boolean(info.isCompleted ?? info[7]),
+    winner: info.winner ?? info[8],
+    totalPool: BigInt(info.totalPool ?? info[9] ?? 0),
+
+    // RaffleConfig ------------------------------
+    numWinners: config ? Number(config.numWinners ?? config[0]) : undefined,
+    creatorPct: config ? Number(config.creatorPct ?? config[1]) : undefined,
+    allowMultipleEntries: config
+      ? Boolean(config.allowMultipleEntries ?? config[2])
+      : undefined,
+
+    // Winners & participants --------------------
+    winners: info.winners,
+    participants: info.participants,
+  };
+}
