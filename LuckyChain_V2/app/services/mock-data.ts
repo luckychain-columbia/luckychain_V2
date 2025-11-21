@@ -1,23 +1,24 @@
 // Mock raffle data for development/testing
 
-import { parseEther } from "../utils"
-import type { RaffleData } from "@/app/types"
+import type { RaffleData } from "@/app/types";
+import { parseEther } from "ethers/utils";
 
 type MockRaffle = RaffleData & {
-  id: number
-  participants?: string[]
-  winners?: string[]
-  numWinners: number
-  creatorPct: number
-  allowMultipleEntries: boolean
-}
+  id: number;
+  participants?: string[];
+  winners?: string[];
+  numWinners: number;
+  creatorPct: number;
+  allowMultipleEntries: boolean;
+};
 
 export const MOCK_RAFFLES: MockRaffle[] = [
   {
     id: 0,
     creator: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     title: "Mega Jackpot Draw (Demo)",
-    description: "Win big in our flagship raffle with a massive prize pool. Draw happens when all tickets are sold!",
+    description:
+      "Win big in our flagship raffle with a massive prize pool. Draw happens when all tickets are sold!",
     ticketPrice: parseEther("0.05"),
     maxTickets: BigInt(100),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 5),
@@ -25,7 +26,10 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     isCompleted: false,
     winner: "0x0000000000000000000000000000000000000000",
     totalPool: parseEther("2.5"),
-    participants: ["0x8ba1f109551bD432803012645Ac136ddd64DBA72", "0x1234567890123456789012345678901234567890"],
+    participants: [
+      "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+      "0x1234567890123456789012345678901234567890",
+    ],
     winners: [],
     numWinners: 1,
     creatorPct: 0,
@@ -35,7 +39,8 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     id: 1,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Quick Draw Raffle (Demo)",
-    description: "Fast-paced raffle with affordable tickets. Perfect for trying your luck!",
+    description:
+      "Fast-paced raffle with affordable tickets. Perfect for trying your luck!",
     ticketPrice: parseEther("0.01"),
     maxTickets: BigInt(50),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 2),
@@ -53,7 +58,8 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     id: 2,
     creator: "0x1234567890123456789012345678901234567890",
     title: "Community Raffle (Demo)",
-    description: "Support the community while winning prizes. 10% goes to charity!",
+    description:
+      "Support the community while winning prizes. 10% goes to charity!",
     ticketPrice: parseEther("0.02"),
     maxTickets: BigInt(200),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 7),
@@ -61,7 +67,10 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     isCompleted: false,
     winner: "0x0000000000000000000000000000000000000000",
     totalPool: parseEther("1.8"),
-    participants: ["0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+    participants: [
+      "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+      "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+    ],
     winners: [],
     numWinners: 2,
     creatorPct: 500, // 5%
@@ -89,7 +98,8 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     id: 4,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Premium Prize Pool (Demo)",
-    description: "High stakes raffle for serious players. Massive rewards await!",
+    description:
+      "High stakes raffle for serious players. Massive rewards await!",
     ticketPrice: parseEther("0.1"),
     maxTickets: BigInt(50),
     endTime: BigInt(Math.floor(Date.now() / 1000) + 86400 * 10),
@@ -133,7 +143,10 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     isCompleted: true,
     winner: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     totalPool: parseEther("2.25"),
-    participants: ["0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+    participants: [
+      "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+      "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+    ],
     winners: ["0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1"],
     numWinners: 1,
     creatorPct: 500,
@@ -143,7 +156,8 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     id: 7,
     creator: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     title: "New Year Mega Draw (Demo)",
-    description: "Completed with 100 participants. Lucky winner took home 5 ETH!",
+    description:
+      "Completed with 100 participants. Lucky winner took home 5 ETH!",
     ticketPrice: parseEther("0.05"),
     maxTickets: BigInt(100),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 7),
@@ -151,7 +165,10 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     isCompleted: true,
     winner: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     totalPool: parseEther("5.0"),
-    participants: ["0x8ba1f109551bD432803012645Ac136ddd64DBA72", "0x1234567890123456789012345678901234567890"],
+    participants: [
+      "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+      "0x1234567890123456789012345678901234567890",
+    ],
     winners: ["0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
     numWinners: 3,
     creatorPct: 750,
@@ -161,7 +178,8 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     id: 8,
     creator: "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
     title: "Flash Friday (Demo)",
-    description: "24-hour flash raffle that ended last week. Winner claimed 1.5 ETH!",
+    description:
+      "24-hour flash raffle that ended last week. Winner claimed 1.5 ETH!",
     ticketPrice: parseEther("0.025"),
     maxTickets: BigInt(60),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 5),
@@ -179,7 +197,8 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     id: 9,
     creator: "0x1234567890123456789012345678901234567890",
     title: "Spring Jackpot (Demo)",
-    description: "Seasonal raffle that concluded with great prizes distributed!",
+    description:
+      "Seasonal raffle that concluded with great prizes distributed!",
     ticketPrice: parseEther("0.04"),
     maxTickets: BigInt(120),
     endTime: BigInt(Math.floor(Date.now() / 1000) - 86400 * 14),
@@ -193,5 +212,4 @@ export const MOCK_RAFFLES: MockRaffle[] = [
     creatorPct: 250,
     allowMultipleEntries: true,
   },
-]
-
+];

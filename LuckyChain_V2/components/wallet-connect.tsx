@@ -1,48 +1,55 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { shortenAddress } from "@/app/utils"
-import { Wallet, LogOut } from "lucide-react"
-import { useWeb3 } from "@/app/context/Web3Context"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { shortenAddress } from "@/lib/utils";
+import { Wallet, LogOut } from "lucide-react";
+import { useWeb3 } from "@/app/context/Web3Context";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 export function WalletConnect() {
-  const { account, connectWallet, disconnectWallet, isConnecting, availableWallets, selectWallet } = useWeb3()
-  const [showWalletDialog, setShowWalletDialog] = useState(false)
+  const {
+    account,
+    connectWallet,
+    disconnectWallet,
+    isConnecting,
+    availableWallets,
+    selectWallet,
+  } = useWeb3();
+  const [showWalletDialog, setShowWalletDialog] = useState(false);
 
   async function handleConnect() {
     try {
       // If multiple wallets are available, show selection dialog
       if (availableWallets.length > 1) {
-        setShowWalletDialog(true)
-        return
+        setShowWalletDialog(true);
+        return;
       }
-      
+
       // Single wallet or no wallets detected - use default connection
-      await connectWallet()
+      await connectWallet();
     } catch (error) {
-      console.error("Failed to connect wallet:", error)
+      console.error("Failed to connect wallet:", error);
     }
   }
 
-  async function handleSelectWallet(wallet: typeof availableWallets[0]) {
+  async function handleSelectWallet(wallet: (typeof availableWallets)[0]) {
     try {
-      setShowWalletDialog(false)
-      await selectWallet(wallet)
+      setShowWalletDialog(false);
+      await selectWallet(wallet);
     } catch (error) {
-      console.error("Failed to connect wallet:", error)
+      console.error("Failed to connect wallet:", error);
     }
   }
 
   function handleDisconnect() {
-    disconnectWallet()
+    disconnectWallet();
   }
 
   return (
@@ -74,8 +81,12 @@ export function WalletConnect() {
             className="glass-strong glow-border font-semibold text-xs md:text-base h-9 md:h-12 px-3 md:px-6 text-white hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
           >
             <Wallet className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
-            <span className="hidden sm:inline">{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
-            <span className="sm:hidden">{isConnecting ? "..." : "Connect"}</span>
+            <span className="hidden sm:inline">
+              {isConnecting ? "Connecting..." : "Connect Wallet"}
+            </span>
+            <span className="sm:hidden">
+              {isConnecting ? "..." : "Connect"}
+            </span>
           </Button>
         )}
       </div>
@@ -84,9 +95,12 @@ export function WalletConnect() {
       <Dialog open={showWalletDialog} onOpenChange={setShowWalletDialog}>
         <DialogContent className="glass-strong glow-border border-primary/40 bg-black/90 text-white">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Select Wallet</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
+              Select Wallet
+            </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Multiple wallets detected. Choose which wallet you'd like to connect:
+              Multiple wallets detected. Choose which wallet you'd like to
+              connect:
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-4">
@@ -110,5 +124,5 @@ export function WalletConnect() {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

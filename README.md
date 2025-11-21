@@ -78,21 +78,18 @@ User Action → Frontend Component → useContract Hook → Web3 Provider → Sm
 
 ```
 app/layout.tsx (Root Layout)
-├── Web3Provider (Wallet State Management)
-│   ├── ErrorBoundary (Error Handling)
-│   │   └── app/page.tsx (Home Page)
-│   │       ├── WalletConnect (Wallet Connection UI)
-│   │       ├── CreateRaffleDialog (Create Raffle Form)
-│   │       └── RaffleCard[] (List of Raffles)
-│   │
-│   │   └── app/fyi/page.tsx (How It Works Page)
-│   │
-│   │   └── app/developers/page.tsx (Developer Documentation)
-│   │
-│   │   └── app/raffle/[id]/page.tsx (Raffle Detail Page)
-│   │       └── RaffleDetailClient (Raffle Details Component)
-│   │
-│   └── Toaster (Toast Notifications)
+├── ErrorBoundary (Error Handling)
+│   └── Web3Provider (Wallet State Management)
+│       ├── Toaster (Toast Notifications)
+│       └── children (pages)
+│           ├── app/page.tsx (Home Page)
+│           │   ├── WalletConnect (Wallet Connection UI)
+│           │   ├── CreateRaffleDialog (Create Raffle Form)
+│           │   └── RaffleCard[] (List of Raffles)
+│           ├── app/fyi/page.tsx (How It Works Page)
+│           ├── app/developers/page.tsx (Developer Documentation)
+│           └── app/raffle/[id]/page.tsx (Raffle Detail Page)
+│               └── RaffleDetailClient (Raffle Details Component)
 ```
 
 ---
@@ -118,9 +115,6 @@ LuckyChain_V2/
 │   │
 │   ├── types/                    # TypeScript type definitions
 │   │   └── index.ts              # Type interfaces (RaffleData, Raffle, Ticket, etc.)
-│   │
-│   ├── utils/                    # Utility functions
-│   │   └── index.ts              # Helper functions (formatEther, shortenAddress, etc.)
 │   │
 │   ├── fyi/                      # "How It Works" page
 │   │   └── page.tsx              # FAQ and user documentation

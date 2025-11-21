@@ -1,131 +1,162 @@
-"use client"
+"use client";
 
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import type { ContractRaffle } from "@/app/services/contract"
-import { formatEther, shortenAddress, getRaffleUrl } from "@/app/utils"
-import { Clock, Users, Trophy, Coins, ExternalLink, Copy, Check } from "lucide-react"
-import { useState, useEffect, useMemo, useCallback, memo } from "react"
-import { useToast } from "@/hooks/use-toast"
-import useContract from "@/app/services/contract"
-import { useWeb3 } from "@/app/context/Web3Context"
-import { extractErrorMessage } from "@/app/services/contract-utils"
-import Link from "next/link"
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import type { ContractRaffle } from "@/app/services/contract";
+import { shortenAddress, getRaffleUrl } from "@/lib/utils";
+import {
+  Clock,
+  Users,
+  Trophy,
+  Coins,
+  ExternalLink,
+  Copy,
+  Check,
+} from "lucide-react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useToast } from "@/hooks/use-toast";
+import useContract from "@/app/services/contract";
+import { useWeb3 } from "@/app/context/Web3Context";
+import { extractErrorMessage } from "@/app/services/contract-utils";
+import Link from "next/link";
+import { formatEther } from "ethers/utils";
 
 interface RaffleCardProps {
-  raffle: ContractRaffle
-  onUpdate?: () => void
+  raffle: ContractRaffle;
+  onUpdate?: () => void;
 }
 
-export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleCardProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [participants, setParticipants] = useState<string[]>([])
-  const [winners, setWinners] = useState<string[]>(raffle.winners ?? [])
-  const [ticketCount, setTicketCount] = useState<number>(1)
-  const [copied, setCopied] = useState(false)
-  const { toast } = useToast()
-  const { buyTicket, getParticipants, getWinners, selectWinner } = useContract()
-  const { account } = useWeb3()
-  const allowMultipleEntries = raffle.allowMultipleEntries ?? false
-  const isCreator = account && raffle.creator?.toLowerCase() === account.toLowerCase()
+export const RaffleCard = memo(function RaffleCard({
+  raffle,
+  onUpdate,
+}: RaffleCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [winners, setWinners] = useState<string[]>(raffle.winners ?? []);
+  const [ticketCount, setTicketCount] = useState<number>(1);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+  const { buyTicket, getParticipants, getWinners, selectWinner } =
+    useContract();
+  const { account } = useWeb3();
+  const allowMultipleEntries = raffle.allowMultipleEntries ?? false;
+  const isCreator =
+    account && raffle.creator?.toLowerCase() === account.toLowerCase();
 
   const loadParticipants = useCallback(async () => {
     try {
-      const parts = await getParticipants(raffle.id)
-      setParticipants(parts)
+      const parts = await getParticipants(raffle.id);
+      setParticipants(parts);
     } catch (error) {
-      console.error("Failed to load participants:", error)
+      console.error("Failed to load participants:", error);
     }
-  }, [raffle.id, getParticipants])
+  }, [raffle.id, getParticipants]);
 
   const loadWinners = useCallback(async () => {
     if (!raffle.isCompleted) {
-      setWinners([])
-      return
+      setWinners([]);
+      return;
     }
 
     if (raffle.winners && raffle.winners.length > 0) {
-      setWinners(raffle.winners)
-      return
+      setWinners(raffle.winners);
+      return;
     }
 
     try {
-      const fetched = await getWinners(raffle.id)
-      setWinners(fetched)
+      const fetched = await getWinners(raffle.id);
+      setWinners(fetched);
     } catch (error) {
-      console.warn("Failed to load winners:", error)
+      console.warn("Failed to load winners:", error);
     }
-  }, [raffle.id, raffle.isCompleted, raffle.winners, getWinners])
+  }, [raffle.id, raffle.isCompleted, raffle.winners, getWinners]);
 
   useEffect(() => {
-    loadParticipants()
-  }, [loadParticipants])
+    loadParticipants();
+  }, [loadParticipants]);
 
   useEffect(() => {
-    setWinners(raffle.winners ?? [])
+    setWinners(raffle.winners ?? []);
 
     if (raffle.isCompleted) {
-      void loadWinners()
+      void loadWinners();
     }
-  }, [raffle.winners, raffle.isCompleted, loadWinners])
+  }, [raffle.winners, raffle.isCompleted, loadWinners]);
 
   useEffect(() => {
     if (!allowMultipleEntries) {
-      setTicketCount(1)
+      setTicketCount(1);
     }
-  }, [allowMultipleEntries])
+  }, [allowMultipleEntries]);
 
   // Memoize time calculations to avoid recalculating on every render
   const timeData = useMemo(() => {
-    const endTimestamp = Number(raffle.endTime ?? 0)
-    const nowSeconds = Math.floor(Date.now() / 1000)
-    const hasEnded = endTimestamp > 0 && endTimestamp <= nowSeconds
-    const endDate = endTimestamp > 0 && endTimestamp < Number.MAX_SAFE_INTEGER / 1000 
-      ? new Date(endTimestamp * 1000) 
-      : new Date(Date.now() + 86400000) // Default to 1 day from now if invalid
-    const now = new Date()
-    const timeLeft = Math.max(0, Math.min(endDate.getTime() - now.getTime(), Number.MAX_SAFE_INTEGER))
-    const daysLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60 * 24)))
-    const hoursLeft = Math.max(0, Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
-    const isActuallyEnded = raffle.isCompleted || hasEnded || timeLeft <= 0
-    
-    return { hasEnded, daysLeft, hoursLeft, isActuallyEnded, timeLeft }
-  }, [raffle.endTime, raffle.isCompleted])
+    const endTimestamp = Number(raffle.endTime ?? 0);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const hasEnded = endTimestamp > 0 && endTimestamp <= nowSeconds;
+    const endDate =
+      endTimestamp > 0 && endTimestamp < Number.MAX_SAFE_INTEGER / 1000
+        ? new Date(endTimestamp * 1000)
+        : new Date(Date.now() + 86400000); // Default to 1 day from now if invalid
+    const now = new Date();
+    const timeLeft = Math.max(
+      0,
+      Math.min(endDate.getTime() - now.getTime(), Number.MAX_SAFE_INTEGER)
+    );
+    const daysLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60 * 24)));
+    const hoursLeft = Math.max(
+      0,
+      Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    );
+    const isActuallyEnded = raffle.isCompleted || hasEnded || timeLeft <= 0;
 
-  const { hasEnded, daysLeft, hoursLeft, isActuallyEnded, timeLeft } = timeData
+    return { hasEnded, daysLeft, hoursLeft, isActuallyEnded, timeLeft };
+  }, [raffle.endTime, raffle.isCompleted]);
+
+  const { hasEnded, daysLeft, hoursLeft, isActuallyEnded, timeLeft } = timeData;
 
   // Memoize expensive calculations
   const raffleCalculations = useMemo(() => {
-    const ticketsSold = Math.max(0, participants.length)
-    const maxTicketsNumber = Math.max(0, Number(raffle.maxTickets ?? 0))
-    const maxTicketsReached = maxTicketsNumber > 0 && ticketsSold >= maxTicketsNumber
-    const canFinalize = !raffle.isCompleted && participants.length > 0 && (hasEnded || (maxTicketsReached && isCreator))
-    const poolEth = Math.max(0, Number(formatEther(raffle.totalPool ?? BigInt(0))))
-    const rewardFromPool = (poolEth * 0.1) / 100 // 0.1% of pool
-    const calculatedReward = rewardFromPool > 0.001 ? rewardFromPool : 0.001
-    const finalizationRewardEth = Math.min(0.01, Math.max(0.001, calculatedReward))
-    const actualReward = Math.min(finalizationRewardEth, poolEth)
+    const ticketsSold = Math.max(0, participants.length);
+    const maxTicketsNumber = Math.max(0, Number(raffle.maxTickets ?? 0));
+    const maxTicketsReached =
+      maxTicketsNumber > 0 && ticketsSold >= maxTicketsNumber;
+    const canFinalize =
+      !raffle.isCompleted &&
+      participants.length > 0 &&
+      (hasEnded || (maxTicketsReached && isCreator));
+    const poolEth = Math.max(
+      0,
+      Number(formatEther(raffle.totalPool ?? BigInt(0)))
+    );
+    const rewardFromPool = (poolEth * 0.1) / 100; // 0.1% of pool
+    const calculatedReward = rewardFromPool > 0.001 ? rewardFromPool : 0.001;
+    const finalizationRewardEth = Math.min(
+      0.01,
+      Math.max(0.001, calculatedReward)
+    );
+    const actualReward = Math.min(finalizationRewardEth, poolEth);
     const progress =
       maxTicketsNumber > 0
         ? Math.min(100, Math.max(0, (ticketsSold / maxTicketsNumber) * 100))
         : participants.length > 0
-          ? 100
-          : 0
-    const rawCreatorPct = raffle.creatorPct ?? 0
+        ? 100
+        : 0;
+    const rawCreatorPct = raffle.creatorPct ?? 0;
     const creatorFeePercent =
       typeof rawCreatorPct === "number"
         ? rawCreatorPct > 100
           ? rawCreatorPct / 100 // Convert basis points to percentage
           : rawCreatorPct
-        : 0
-    const numWinners = Math.max(1, raffle.numWinners ?? 1)
+        : 0;
+    const numWinners = Math.max(1, raffle.numWinners ?? 1);
     const ticketsRemaining =
       maxTicketsNumber > 0
         ? Math.max(0, maxTicketsNumber - ticketsSold)
-        : undefined
-    
+        : undefined;
+
     return {
       ticketsSold,
       maxTicketsNumber,
@@ -136,8 +167,17 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
       creatorFeePercent,
       numWinners,
       ticketsRemaining,
-    }
-  }, [participants, raffle.maxTickets, raffle.isCompleted, raffle.totalPool, raffle.creatorPct, raffle.numWinners, hasEnded, isCreator])
+    };
+  }, [
+    participants,
+    raffle.maxTickets,
+    raffle.isCompleted,
+    raffle.totalPool,
+    raffle.creatorPct,
+    raffle.numWinners,
+    hasEnded,
+    isCreator,
+  ]);
 
   const {
     ticketsSold,
@@ -149,38 +189,41 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
     creatorFeePercent,
     numWinners,
     ticketsRemaining,
-  } = raffleCalculations
+  } = raffleCalculations;
 
   // Memoize derived values that depend on ticketCount
   const desiredTicketCount = useMemo(
-    () => allowMultipleEntries ? ticketCount : 1,
+    () => (allowMultipleEntries ? ticketCount : 1),
     [allowMultipleEntries, ticketCount]
-  )
-  
+  );
+
   const capacityReached = useMemo(
-    () => ticketsRemaining !== undefined ? ticketsRemaining === 0 : false,
+    () => (ticketsRemaining !== undefined ? ticketsRemaining === 0 : false),
     [ticketsRemaining]
-  )
-  
+  );
+
   const exceedsCapacity = useMemo(
-    () => ticketsRemaining !== undefined ? desiredTicketCount > ticketsRemaining : false,
+    () =>
+      ticketsRemaining !== undefined
+        ? desiredTicketCount > ticketsRemaining
+        : false,
     [ticketsRemaining, desiredTicketCount]
-  )
-  
+  );
+
   const exceedsTransactionLimit = useMemo(
     () => desiredTicketCount > 1000, // Contract MAX_TICKETS_PER_TRANSACTION
     [desiredTicketCount]
-  )
-  
+  );
+
   const invalidTicketCount = useMemo(
     () => desiredTicketCount < 1,
     [desiredTicketCount]
-  )
+  );
 
   const handleBuyTicket = useCallback(async () => {
     // Prevent multiple simultaneous transactions
     if (isLoading) {
-      return
+      return;
     }
 
     if (!account) {
@@ -188,19 +231,20 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         title: "Wallet Required",
         description: "Please connect your wallet to buy tickets",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (!raffle.isActive || isActuallyEnded) {
       toast({
         title: "Raffle Ended",
-        description: hasEnded && !raffle.isCompleted
-          ? "This raffle has expired. Winners have not been selected yet."
-          : "This raffle is no longer active",
+        description:
+          hasEnded && !raffle.isCompleted
+            ? "This raffle has expired. Winners have not been selected yet."
+            : "This raffle is no longer active",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (invalidTicketCount || desiredTicketCount < 1) {
@@ -208,8 +252,8 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         title: "Invalid quantity",
         description: "Please enter a valid ticket amount (at least 1)",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     // Validate ticket count doesn't exceed per-transaction limit (1000)
@@ -218,8 +262,8 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         title: "Too many tickets",
         description: "Cannot purchase more than 1,000 tickets per transaction",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (capacityReached) {
@@ -227,49 +271,54 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         title: "Raffle Full",
         description: "All tickets for this raffle have been sold",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (exceedsCapacity) {
       toast({
         title: "Not enough tickets",
-        description: `Only ${ticketsRemaining} ticket${ticketsRemaining !== 1 ? "s" : ""} remaining`,
+        description: `Only ${ticketsRemaining} ticket${
+          ticketsRemaining !== 1 ? "s" : ""
+        } remaining`,
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const ticketPriceEth = Number(formatEther(raffle.ticketPrice))
+      const ticketPriceEth = Number(formatEther(raffle.ticketPrice));
       if (ticketPriceEth <= 0 || !Number.isFinite(ticketPriceEth)) {
-        throw new Error("Invalid ticket price")
+        throw new Error("Invalid ticket price");
       }
 
-      await buyTicket(raffle.id, ticketPriceEth, desiredTicketCount)
+      await buyTicket(raffle.id, ticketPriceEth, desiredTicketCount);
       toast({
         title: "Success!",
         description:
           desiredTicketCount > 1
             ? `${desiredTicketCount} tickets purchased successfully`
             : "Ticket purchased successfully",
-      })
-      
+      });
+
       // Refresh data - cache will be invalidated by buyTicket function
-      await Promise.all([loadParticipants(), loadWinners()])
-      onUpdate?.()
-      setTicketCount(1)
+      await Promise.all([loadParticipants(), loadWinners()]);
+      onUpdate?.();
+      setTicketCount(1);
     } catch (error: any) {
-      const errorMessage = extractErrorMessage(error, "Failed to purchase ticket")
-      
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to purchase ticket"
+      );
+
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }, [
     isLoading,
@@ -291,12 +340,12 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
     loadWinners,
     onUpdate,
     toast,
-  ])
+  ]);
 
   const handleFinalizeRaffle = useCallback(async () => {
     // Prevent multiple simultaneous transactions
     if (isLoading) {
-      return
+      return;
     }
 
     if (!account) {
@@ -304,8 +353,8 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         title: "Wallet Required",
         description: "Please connect your wallet to finalize the raffle",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (participants.length === 0) {
@@ -313,41 +362,45 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         title: "No Participants",
         description: "Cannot finalize a raffle with no participants",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     // Check authorization based on raffle state
     if (!hasEnded && maxTicketsReached && !isCreator) {
       toast({
         title: "Unauthorized",
-        description: "Only the raffle creator can finalize early when max tickets are reached",
+        description:
+          "Only the raffle creator can finalize early when max tickets are reached",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await selectWinner(raffle.id)
+      await selectWinner(raffle.id);
       toast({
         title: "Success!",
         description: "Raffle finalized and winners selected",
-      })
-      
+      });
+
       // Refresh data - cache will be invalidated by selectWinner function
-      await Promise.all([loadParticipants(), loadWinners()])
-      onUpdate?.()
+      await Promise.all([loadParticipants(), loadWinners()]);
+      onUpdate?.();
     } catch (error: any) {
-      const errorMessage = extractErrorMessage(error, "Failed to finalize raffle")
-      
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to finalize raffle"
+      );
+
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }, [
     isLoading,
@@ -362,13 +415,13 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
     loadWinners,
     onUpdate,
     toast,
-  ])
+  ]);
 
   // Memoize derived values
   const winnersToDisplay = useMemo(
-    () => winners.length > 0 ? winners : (raffle.winners ?? []),
+    () => (winners.length > 0 ? winners : raffle.winners ?? []),
     [winners, raffle.winners]
-  )
+  );
 
   return (
     <Card className="glass-strong glow-border overflow-hidden border-0 shadow-2xl hover:shadow-primary/20 hover:scale-[1.02] transition-all duration-300 group h-full flex flex-col">
@@ -378,7 +431,10 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {isActuallyEnded ? (
-                <Badge variant="secondary" className="glass shadow-lg text-gray-400">
+                <Badge
+                  variant="secondary"
+                  className="glass shadow-lg text-gray-400"
+                >
                   <Trophy className="mr-1.5 h-3.5 w-3.5" />
                   {raffle.isCompleted ? "Ended" : "Expired"}
                 </Badge>
@@ -395,17 +451,18 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
             </div>
             <Button
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
+                e.preventDefault();
+                e.stopPropagation();
                 if (typeof window !== "undefined") {
-                  const url = getRaffleUrl(raffle.id)
-                  navigator.clipboard.writeText(url)
-                  setCopied(true)
+                  const url = getRaffleUrl(raffle.id);
+                  navigator.clipboard.writeText(url);
+                  setCopied(true);
                   toast({
                     title: "Link copied!",
-                    description: "Raffle link has been copied to your clipboard.",
-                  })
-                  setTimeout(() => setCopied(false), 2000)
+                    description:
+                      "Raffle link has been copied to your clipboard.",
+                  });
+                  setTimeout(() => setCopied(false), 2000);
                 }
               }}
               variant="ghost"
@@ -423,7 +480,7 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
 
           {/* Title + Description */}
           <div className="space-y-2">
-            <Link 
+            <Link
               href={`/raffle/${raffle.id}`}
               className="group/title block hover:opacity-80 transition-opacity"
             >
@@ -445,11 +502,9 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground font-medium">Progress</span>
             <span className="font-semibold text-foreground">
-              {maxTicketsNumber > 0 ? (
-                `${ticketsSold} / ${maxTicketsNumber} tickets`
-              ) : (
-                `${ticketsSold} tickets (unlimited)`
-              )}
+              {maxTicketsNumber > 0
+                ? `${ticketsSold} / ${maxTicketsNumber} tickets`
+                : `${ticketsSold} tickets (unlimited)`}
             </span>
           </div>
           <div className="h-2.5 rounded-full bg-muted/50 overflow-hidden border border-border/30">
@@ -500,46 +555,63 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
               min={1}
               step={1}
               max={ticketsRemaining ? Math.min(ticketsRemaining, 1000) : 1000}
-              disabled={!allowMultipleEntries || isLoading || capacityReached || hasEnded}
+              disabled={
+                !allowMultipleEntries ||
+                isLoading ||
+                capacityReached ||
+                hasEnded
+              }
               value={allowMultipleEntries ? ticketCount.toString() : "1"}
               onChange={(event) => {
-                const value = event.target.value
+                const value = event.target.value;
                 // Allow empty input temporarily for better UX
                 if (value === "") {
-                  return
+                  return;
                 }
-                const nextValue = parseInt(value, 10)
+                const nextValue = parseInt(value, 10);
                 // Validate: must be positive integer
-                if (isNaN(nextValue) || nextValue < 1 || !Number.isInteger(nextValue)) {
-                  return
+                if (
+                  isNaN(nextValue) ||
+                  nextValue < 1 ||
+                  !Number.isInteger(nextValue)
+                ) {
+                  return;
                 }
                 // Cap at 1000 tickets per transaction (matches contract MAX_TICKETS_PER_TRANSACTION)
-                const maxTicketsPerTransaction = 1000
-                const upperBound = ticketsRemaining !== undefined 
-                  ? Math.min(ticketsRemaining, maxTicketsPerTransaction)
-                  : maxTicketsPerTransaction
-                const clampedValue = Math.min(Math.max(1, nextValue), upperBound)
-                setTicketCount(clampedValue)
+                const maxTicketsPerTransaction = 1000;
+                const upperBound =
+                  ticketsRemaining !== undefined
+                    ? Math.min(ticketsRemaining, maxTicketsPerTransaction)
+                    : maxTicketsPerTransaction;
+                const clampedValue = Math.min(
+                  Math.max(1, nextValue),
+                  upperBound
+                );
+                setTicketCount(clampedValue);
               }}
               onBlur={(event) => {
                 // Ensure value is valid on blur
-                const value = event.target.value
+                const value = event.target.value;
                 if (value === "") {
-                  setTicketCount(1)
-                  return
+                  setTicketCount(1);
+                  return;
                 }
-                const parsedValue = parseInt(value, 10)
+                const parsedValue = parseInt(value, 10);
                 if (isNaN(parsedValue) || parsedValue < 1) {
-                  setTicketCount(1)
-                  return
+                  setTicketCount(1);
+                  return;
                 }
                 // Clamp to available tickets and max limit per transaction (1000)
-                const maxTicketsPerTransaction = 1000
-                const upperBound = ticketsRemaining !== undefined 
-                  ? Math.min(ticketsRemaining, maxTicketsPerTransaction)
-                  : maxTicketsPerTransaction
-                const clampedValue = Math.min(Math.max(1, parsedValue), upperBound)
-                setTicketCount(clampedValue)
+                const maxTicketsPerTransaction = 1000;
+                const upperBound =
+                  ticketsRemaining !== undefined
+                    ? Math.min(ticketsRemaining, maxTicketsPerTransaction)
+                    : maxTicketsPerTransaction;
+                const clampedValue = Math.min(
+                  Math.max(1, parsedValue),
+                  upperBound
+                );
+                setTicketCount(clampedValue);
               }}
             />
           </div>
@@ -643,8 +715,8 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
             {isLoading
               ? "Processing..."
               : allowMultipleEntries && desiredTicketCount > 1
-                ? `Buy ${desiredTicketCount} Tickets`
-                : "Buy Ticket"}
+              ? `Buy ${desiredTicketCount} Tickets`
+              : "Buy Ticket"}
           </Button>
           {/* Disclaimer text - always reserves space to maintain button alignment */}
           <div className="h-5 mt-1.5">
@@ -670,7 +742,9 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
           <div className="h-5 mt-1.5">
             <span className="text-xs text-muted-foreground block text-center">
               {hasEnded
-                ? `Finalizing rewards you ${actualReward.toFixed(4)} ETH from the pool (covers gas).`
+                ? `Finalizing rewards you ${actualReward.toFixed(
+                    4
+                  )} ETH from the pool (covers gas).`
                 : maxTicketsReached
                 ? isCreator
                   ? "All tickets sold. Click to select winners and distribute prizes."
@@ -681,5 +755,5 @@ export const RaffleCard = memo(function RaffleCard({ raffle, onUpdate }: RaffleC
         </div>
       )}
     </Card>
-  )
-})
+  );
+});
