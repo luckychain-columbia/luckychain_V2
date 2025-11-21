@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import type { ContractRaffle } from "@/app/services/contract";
+import type { ContractRaffle } from "@/hooks/use-contract";
 import { shortenAddress, getRaffleUrl } from "@/lib/utils";
 import {
   Clock,
@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import useContract from "@/app/services/contract";
+import useContract from "@/hooks/use-contract";
 import { useWeb3 } from "@/app/context/Web3Context";
-import { extractErrorMessage } from "@/app/services/contract-utils";
+import { extractErrorMessage } from "@/lib/contract-utils";
 import Link from "next/link";
 import { formatEther } from "ethers/utils";
 

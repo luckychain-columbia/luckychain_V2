@@ -1,89 +1,92 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react"
-import Link from "next/link"
-import { WalletConnect } from "@/components/wallet-connect"
-import { RaffleCard } from "@/components/raffle-card"
-import { CreateRaffleDialog } from "@/components/create-raffle-dialog"
-import { PixelatedCash } from "@/components/pixelated-cash"
-import { RaffleCardSkeleton } from "@/components/raffle-card-skeleton"
-import type { RaffleData } from "@/app/types"
-import { Sparkles, Trophy, Shield, Zap } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { useWeb3 } from "./context/Web3Context"
-import useContract, { type ContractRaffle } from "./services/contract"
+import { useEffect, useState, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { WalletConnect } from "@/components/wallet-connect";
+import { RaffleCard } from "@/components/raffle-card";
+import { CreateRaffleDialog } from "@/components/create-raffle-dialog";
+import { PixelatedCash } from "@/components/pixelated-cash";
+import { RaffleCardSkeleton } from "@/components/raffle-card-skeleton";
+import { Sparkles, Trophy, Shield, Zap } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useWeb3 } from "./context/Web3Context";
+import useContract, { type ContractRaffle } from "../hooks/use-contract";
 
 export default function Home() {
-  const [raffles, setRaffles] = useState<ContractRaffle[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("active")
-  const { account: address } = useWeb3()
-  const { loadRaffles: loadRafflesFromContract } = useContract()
+  const [raffles, setRaffles] = useState<ContractRaffle[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
+  const { account: address } = useWeb3();
+  const { loadRaffles: loadRafflesFromContract } = useContract();
 
   const handleLoadRaffles = useCallback(async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const data = await loadRafflesFromContract()
-      setRaffles(data.reverse())
+      const data = await loadRafflesFromContract();
+      setRaffles(data.reverse());
     } catch (error) {
-      console.error("Failed to load raffles:", error)
-      setRaffles([])
+      console.error("Failed to load raffles:", error);
+      setRaffles([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [loadRafflesFromContract])
+  }, [loadRafflesFromContract]);
 
   useEffect(() => {
-    handleLoadRaffles()
-    
+    handleLoadRaffles();
+
     // Refresh raffles periodically to catch expired ones
     // Note: Cache will reduce RPC calls - only active raffles will be refetched
     const interval = setInterval(() => {
-      handleLoadRaffles()
-    }, 30000) // Refresh every 30 seconds (cache will prevent unnecessary calls)
-    
-    return () => clearInterval(interval)
-  }, [handleLoadRaffles])
+      handleLoadRaffles();
+    }, 30000); // Refresh every 30 seconds (cache will prevent unnecessary calls)
+
+    return () => clearInterval(interval);
+  }, [handleLoadRaffles]);
 
   // Memoize filtered raffles to avoid recalculating on every render
   // Calculate current time inside the filter functions for accuracy
   const activeRaffles = useMemo(() => {
-    const nowSeconds = Math.floor(Date.now() / 1000)
+    const nowSeconds = Math.floor(Date.now() / 1000);
     return raffles.filter((raffle) => {
-      if (!raffle.isActive || raffle.isCompleted) return false
-      const endTimestamp = Number(raffle.endTime ?? 0)
-      return endTimestamp === 0 || endTimestamp > nowSeconds
-    })
-  }, [raffles])
-  
+      if (!raffle.isActive || raffle.isCompleted) return false;
+      const endTimestamp = Number(raffle.endTime ?? 0);
+      return endTimestamp === 0 || endTimestamp > nowSeconds;
+    });
+  }, [raffles]);
+
   const endedRaffles = useMemo(() => {
-    const nowSeconds = Math.floor(Date.now() / 1000)
+    const nowSeconds = Math.floor(Date.now() / 1000);
     return raffles.filter((raffle) => {
-      if (!raffle.isActive || raffle.isCompleted) return true
-      const endTimestamp = Number(raffle.endTime ?? 0)
-      return endTimestamp > 0 && endTimestamp <= nowSeconds
-    })
-  }, [raffles])
-  
+      if (!raffle.isActive || raffle.isCompleted) return true;
+      const endTimestamp = Number(raffle.endTime ?? 0);
+      return endTimestamp > 0 && endTimestamp <= nowSeconds;
+    });
+  }, [raffles]);
+
   const createdRaffles = useMemo(() => {
-    if (!address) return []
-    const addressLower = address.toLowerCase()
-    return raffles.filter((raffle) => raffle.creator?.toLowerCase() === addressLower)
-  }, [raffles, address])
-  
+    if (!address) return [];
+    const addressLower = address.toLowerCase();
+    return raffles.filter(
+      (raffle) => raffle.creator?.toLowerCase() === addressLower
+    );
+  }, [raffles, address]);
+
   const enteredRaffles = useMemo(() => {
-    if (!address) return []
-    const addressLower = address.toLowerCase()
+    if (!address) return [];
+    const addressLower = address.toLowerCase();
     return raffles.filter((raffle) => {
-      const participants = raffle.participants || []
-      return participants.some((p: string) => p?.toLowerCase() === addressLower)
-    })
-  }, [raffles, address])
+      const participants = raffle.participants || [];
+      return participants.some(
+        (p: string) => p?.toLowerCase() === addressLower
+      );
+    });
+  }, [raffles, address]);
 
   const handleRaffleUpdate = useCallback(() => {
-    handleLoadRaffles()
-  }, [handleLoadRaffles])
+    handleLoadRaffles();
+  }, [handleLoadRaffles]);
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -109,11 +112,16 @@ export default function Home() {
       <section className="relative">
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-4 py-20 max-w-screen-xl">
           <nav className="flex items-center justify-between mb-12 md:mb-20 flex-wrap gap-2 md:gap-0 min-w-0">
-            <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity flex-shrink-0 min-w-0">
+            <Link
+              href="/"
+              className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity flex-shrink-0 min-w-0"
+            >
               <div className="h-10 w-10 md:h-14 md:w-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/50 relative z-10 flex-shrink-0">
                 <Trophy className="h-5 w-5 md:h-8 md:w-8 text-white drop-shadow-lg" />
               </div>
-              <span className="text-xl md:text-3xl font-bold tracking-tight text-white relative z-10 truncate">LuckyChain</span>
+              <span className="text-xl md:text-3xl font-bold tracking-tight text-white relative z-10 truncate">
+                LuckyChain
+              </span>
             </Link>
             <div className="flex items-center gap-1 sm:gap-2 md:gap-4 flex-shrink-0 min-w-0">
               <Link href="/fyi">
@@ -172,8 +180,9 @@ export default function Home() {
             </div>
 
             <p className="text-xl text-white/90 max-w-2xl mx-auto text-pretty leading-relaxed drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-              Create and participate in provably fair raffles. Every draw is transparent, verifiable, and secured by
-              smart contracts on the Ethereum blockchain.
+              Create and participate in provably fair raffles. Every draw is
+              transparent, verifiable, and secured by smart contracts on the
+              Ethereum blockchain.
             </p>
 
             <div className="flex items-center justify-center gap-4 pt-4">
@@ -188,7 +197,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold">Provably Fair</h3>
               <p className="text-sm text-muted-foreground text-pretty leading-relaxed">
-                Smart contracts ensure complete transparency and fairness in every draw
+                Smart contracts ensure complete transparency and fairness in
+                every draw
               </p>
             </div>
 
@@ -198,7 +208,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold">Instant Payouts</h3>
               <p className="text-sm text-muted-foreground text-pretty leading-relaxed">
-                Winners receive their prizes automatically through smart contracts
+                Winners receive their prizes automatically through smart
+                contracts
               </p>
             </div>
 
@@ -208,7 +219,8 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold">Create Your Own</h3>
               <p className="text-sm text-muted-foreground text-pretty leading-relaxed">
-                Anyone can create a raffle with custom parameters and prize pools
+                Anyone can create a raffle with custom parameters and prize
+                pools
               </p>
             </div>
           </div>
@@ -216,32 +228,46 @@ export default function Home() {
       </section>
 
       <section className="container mx-auto px-4 sm:px-6 lg:px-4 py-24 relative max-w-screen-xl">
-        <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs
+          defaultValue="active"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           <div className="flex items-center justify-between mb-10">
             <div>
               <h2 className="text-4xl font-bold mb-3 tracking-tight">
                 {activeTab === "active"
                   ? "Active Raffles"
                   : activeTab === "ended"
-                    ? "Ended Raffles"
-                    : "My Raffles"}
+                  ? "Ended Raffles"
+                  : "My Raffles"}
               </h2>
               <p className="text-muted-foreground text-lg">
                 {activeTab === "active"
                   ? "Browse and participate in ongoing raffles"
                   : activeTab === "ended"
-                    ? "View completed raffle results"
-                    : "Raffles you have created or entered"}
+                  ? "View completed raffle results"
+                  : "Raffles you have created or entered"}
               </p>
             </div>
             <TabsList className="glass-strong">
-              <TabsTrigger value="active" className="data-[state=active]:bg-primary/20">
+              <TabsTrigger
+                value="active"
+                className="data-[state=active]:bg-primary/20"
+              >
                 Active
               </TabsTrigger>
-              <TabsTrigger value="ended" className="data-[state=active]:bg-primary/20">
+              <TabsTrigger
+                value="ended"
+                className="data-[state=active]:bg-primary/20"
+              >
                 Ended
               </TabsTrigger>
-              <TabsTrigger value="my" className="data-[state=active]:bg-primary/20">
+              <TabsTrigger
+                value="my"
+                className="data-[state=active]:bg-primary/20"
+              >
                 My Raffles
               </TabsTrigger>
             </TabsList>
@@ -257,14 +283,22 @@ export default function Home() {
             ) : activeRaffles.length === 0 ? (
               <div className="glass-strong glow-border rounded-3xl p-16 text-center">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
-                <h3 className="text-2xl font-semibold mb-3">No active raffles</h3>
-                <p className="text-muted-foreground mb-8 text-lg">Be the first to create a raffle on the platform</p>
+                <h3 className="text-2xl font-semibold mb-3">
+                  No active raffles
+                </h3>
+                <p className="text-muted-foreground mb-8 text-lg">
+                  Be the first to create a raffle on the platform
+                </p>
                 <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeRaffles.map((raffle) => (
-                  <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
+                  <RaffleCard
+                    key={raffle.id}
+                    raffle={raffle}
+                    onUpdate={handleRaffleUpdate}
+                  />
                 ))}
               </div>
             )}
@@ -280,13 +314,21 @@ export default function Home() {
             ) : endedRaffles.length === 0 ? (
               <div className="glass-strong glow-border rounded-3xl p-16 text-center">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
-                <h3 className="text-2xl font-semibold mb-3">No ended raffles yet</h3>
-                <p className="text-muted-foreground text-lg">Completed raffles will appear here</p>
+                <h3 className="text-2xl font-semibold mb-3">
+                  No ended raffles yet
+                </h3>
+                <p className="text-muted-foreground text-lg">
+                  Completed raffles will appear here
+                </p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {endedRaffles.map((raffle) => (
-                  <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
+                  <RaffleCard
+                    key={raffle.id}
+                    raffle={raffle}
+                    onUpdate={handleRaffleUpdate}
+                  />
                 ))}
               </div>
             )}
@@ -296,7 +338,9 @@ export default function Home() {
             {!address ? (
               <div className="glass-strong glow-border rounded-3xl p-16 text-center">
                 <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-6 opacity-50" />
-                <h3 className="text-2xl font-semibold mb-3">Connect your wallet</h3>
+                <h3 className="text-2xl font-semibold mb-3">
+                  Connect your wallet
+                </h3>
                 <p className="text-muted-foreground mb-8 text-lg">
                   Connect your wallet to view raffles you've created or entered
                 </p>
@@ -317,12 +361,18 @@ export default function Home() {
                   </h3>
                   {enteredRaffles.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
-                      <p className="text-muted-foreground">You haven't entered any raffles yet</p>
+                      <p className="text-muted-foreground">
+                        You haven't entered any raffles yet
+                      </p>
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {enteredRaffles.map((raffle) => (
-                        <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
+                        <RaffleCard
+                          key={raffle.id}
+                          raffle={raffle}
+                          onUpdate={handleRaffleUpdate}
+                        />
                       ))}
                     </div>
                   )}
@@ -335,13 +385,19 @@ export default function Home() {
                   </h3>
                   {createdRaffles.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
-                      <p className="text-muted-foreground mb-6">You haven't created any raffles yet</p>
+                      <p className="text-muted-foreground mb-6">
+                        You haven't created any raffles yet
+                      </p>
                       <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {createdRaffles.map((raffle) => (
-                        <RaffleCard key={raffle.id} raffle={raffle} onUpdate={handleRaffleUpdate} />
+                        <RaffleCard
+                          key={raffle.id}
+                          raffle={raffle}
+                          onUpdate={handleRaffleUpdate}
+                        />
                       ))}
                     </div>
                   )}
@@ -360,12 +416,16 @@ export default function Home() {
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-primary/30 relative z-10">
                 <Trophy className="h-6 w-6 text-white drop-shadow-lg" />
               </div>
-              <span className="font-semibold text-lg text-white relative z-10">LuckyChain</span>
+              <span className="font-semibold text-lg text-white relative z-10">
+                LuckyChain
+              </span>
             </div>
-            <p className="text-sm text-muted-foreground">Powered by Ethereum • Built with Solidity</p>
+            <p className="text-sm text-muted-foreground">
+              Powered by Ethereum • Built with Solidity
+            </p>
           </div>
         </div>
       </footer>
     </div>
-  )
+  );
 }

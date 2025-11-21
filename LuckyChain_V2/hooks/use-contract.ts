@@ -2,11 +2,11 @@
 
 import { useMemo } from "react";
 import { ethers, formatEther } from "ethers";
-import { useWeb3 } from "../context/Web3Context";
+import { useWeb3 } from "../app/context/Web3Context";
 import { RAFFLE_ABI } from "@/lib/contract-abi";
 import { RAFFLE_CONTRACT_ADDRESS, isWeb3Available } from "@/lib/web3";
 import type { RaffleData } from "@/app/types";
-import { MOCK_RAFFLES } from "./mock-data";
+import { MOCK_RAFFLES } from "../lib/mock-data";
 import { contractCache, cacheKeys } from "@/lib/contract-cache";
 import {
   extractErrorMessage,
@@ -17,7 +17,7 @@ import {
   validateTicketCount,
   checkOverflow,
   invalidateRaffleCreationCache,
-} from "./contract-utils";
+} from "@/lib/contract-utils";
 
 export type ContractRaffle = RaffleData & {
   id: number;

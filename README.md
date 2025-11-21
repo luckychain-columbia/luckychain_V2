@@ -108,11 +108,6 @@ LuckyChain_V2/
 │   ├── context/                  # React Context providers
 │   │   └── Web3Context.tsx       # Web3 wallet state management
 │   │
-│   ├── services/                 # Business logic services
-│   │   ├── contract.ts           # Contract interaction hook (useContract)
-│   │   ├── contract-utils.ts     # Contract utility functions
-│   │   └── mock-data.ts          # Mock data for development
-│   │
 │   ├── types/                    # TypeScript type definitions
 │   │   └── index.ts              # Type interfaces (RaffleData, Raffle, Ticket, etc.)
 │   │
@@ -143,12 +138,17 @@ LuckyChain_V2/
 │       ├── accordion.tsx
 │       └── ... (many more)
 │
+├── hooks/                        # Hooks
+│   └── contract.ts           # Contract interaction hook (useContract)
+│
 ├── lib/                          # Library utilities
 │   ├── web3.ts                   # Web3 utilities (contract address, availability check)
 │   ├── contract-abi.ts           # Contract ABI (TypeScript)
 │   ├── contract-abi.json         # Contract ABI (JSON)
 │   ├── contract-cache.ts         # RPC call caching system
-│   └── utils.ts                  # General utilities
+│   ├── contract-utils.ts     # Contract utility functions
+│   ├── utils.ts                  # General utilities
+│   └── mock-data.ts          # Mock data for development
 │
 ├── contract/                     # Smart contract directory
 │   ├── contracts/
@@ -627,68 +627,7 @@ Invalidates cache after creating a new raffle.
 
 ---
 
-### 5. Utility Functions (`app/utils/index.ts`)
-
-**Purpose**: General utility functions for the platform.
-
-**Key Functions**:
-
-#### `shortenAddress(address): string`
-Formats wallet address to show first 6 and last 4 characters.
-
-**Example**:
-```typescript
-shortenAddress("0x1234567890123456789012345678901234567890")
-// Returns: "0x1234...7890"
-```
-
-#### `formatEther(value): string`
-Formats wei to ETH string.
-
-**Example**:
-```typescript
-formatEther(BigInt("1000000000000000000")) // 1 ETH in wei
-// Returns: "1.0"
-```
-
-#### `parseEther(value): bigint`
-Parses ETH string to wei.
-
-**Example**:
-```typescript
-parseEther("1.0")
-// Returns: BigInt("1000000000000000000")
-```
-
-#### `getTimeRemaining(endDate): string`
-Calculates time remaining until raffle ends.
-
-**Example**:
-```typescript
-getTimeRemaining(1704067200) // Unix timestamp
-// Returns: "2d 5h" or "3h 45m" or "30s" or "Closed"
-```
-
-#### `getBasePath(): string`
-Gets the base path for the application (for GitHub Pages deployment).
-
-**Process**:
-1. Checks if on GitHub Pages (pathname starts with `/luckychain_V2`)
-2. Returns base path (`/luckychain_V2`) or empty string (for localhost)
-
-#### `getRaffleUrl(raffleId): string`
-Gets the full URL for a raffle, including base path if on GitHub Pages.
-
-**Example**:
-```typescript
-getRaffleUrl(4)
-// Returns: "https://luckychain-columbia.github.io/luckychain_V2/raffle/4"
-// Or: "http://localhost:3000/raffle/4" (in development)
-```
-
----
-
-### 6. RaffleCard Component (`components/raffle-card.tsx`)
+### 5. RaffleCard Component (`components/raffle-card.tsx`)
 
 **Purpose**: Displays individual raffle information and handles user interactions.
 
@@ -738,7 +677,7 @@ Handles raffle finalization.
 
 ---
 
-### 7. CreateRaffleDialog Component (`components/create-raffle-dialog.tsx`)
+### 6. CreateRaffleDialog Component (`components/create-raffle-dialog.tsx`)
 
 **Purpose**: Dialog form for creating new raffles.
 
@@ -779,7 +718,7 @@ Handles form submission.
 
 ---
 
-### 8. WalletConnect Component (`components/wallet-connect.tsx`)
+### 7. WalletConnect Component (`components/wallet-connect.tsx`)
 
 **Purpose**: Wallet connection UI with multi-wallet support.
 
