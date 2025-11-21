@@ -53,11 +53,11 @@ export default function Home() {
 
     // Refresh raffles periodically to catch expired ones
     // Note: Cache will reduce RPC calls - only active raffles will be refetched
-    const interval = setInterval(() => {
-      handleLoadRaffles();
-    }, 30000); // Refresh every 30 seconds (cache will prevent unnecessary calls)
+    // const interval = setInterval(() => {
+    //   handleLoadRaffles();
+    // }, 30000); // Refresh every 30 seconds (cache will prevent unnecessary calls)
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [handleLoadRaffles]);
 
   // Memoize filtered raffles to avoid recalculating on every render
@@ -241,7 +241,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {raffles.map((r) => (
+                {activeRaffles.map((r) => (
                   <RaffleCard
                     key={r.id}
                     raffle={r}
