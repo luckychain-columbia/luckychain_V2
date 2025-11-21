@@ -20,24 +20,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'LuckyChain_V2/package-lock.json'
-      
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "LuckyChain_V2/package-lock.json"
+
       - name: Install dependencies
         working-directory: ./LuckyChain_V2
         run: npm ci
-      
+
       - name: Build Next.js app
         working-directory: ./LuckyChain_V2
         run: npm run build
         env:
           NODE_ENV: production
-      
+          NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS: ${{ secrets.NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS }}
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
