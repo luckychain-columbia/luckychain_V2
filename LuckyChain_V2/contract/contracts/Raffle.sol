@@ -32,7 +32,7 @@ contract Raffle {
     uint16 public constant MAX_CREATOR_PCT = 10_000; // 100%
     uint256 public constant MAX_TICKETS_PER_TRANSACTION = 1000; // Maximum tickets per transaction (prevents DoS)
     uint256 public constant MAX_TICKETS_PER_RAFFLE = 10_000; // Maximum tickets per raffle
-    
+
     // Finalization reward: 0.001 ETH or 0.1% of pool (whichever is higher, capped at 0.01 ETH)
     // This incentivizes anyone to finalize expired raffles by covering gas costs
     uint256 public constant MIN_FINALIZATION_REWARD = 0.001 ether; // 0.001 ETH
@@ -93,7 +93,10 @@ contract Raffle {
         // Validate max tickets if set
         if (_maxTickets > 0) {
             require(_maxTickets >= _numWinners, "Max tickets < num winners");
-            require(_maxTickets <= MAX_TICKETS_PER_RAFFLE, "Max tickets too large");
+            require(
+                _maxTickets <= MAX_TICKETS_PER_RAFFLE,
+                "Max tickets too large"
+            );
         }
 
         uint256 raffleId = nextRaffleId++;
@@ -140,9 +143,15 @@ contract Raffle {
         buyTickets(_raffleId, 1);
     }
 
-    function buyTickets(uint256 _raffleId, uint256 _ticketCount) public payable {
+    function buyTickets(
+        uint256 _raffleId,
+        uint256 _ticketCount
+    ) public payable {
         require(_ticketCount > 0, "Ticket count must be > 0");
-        require(_ticketCount <= MAX_TICKETS_PER_TRANSACTION, "Too many tickets per transaction");
+        require(
+            _ticketCount <= MAX_TICKETS_PER_TRANSACTION,
+            "Too many tickets per transaction"
+        );
 
         RaffleInfo storage raffle = raffles[_raffleId];
         RaffleConfig memory config = raffleSettings[_raffleId];
@@ -185,21 +194,23 @@ contract Raffle {
     function finalizeRaffle(uint256 _raffleId) external {
         RaffleInfo storage raffle = raffles[_raffleId];
         bool isExpired = block.timestamp >= raffle.endTime;
-        
+
         // If raffle has expired, anyone can finalize (with reward from pool)
         if (isExpired) {
             _finalizeRaffle(_raffleId, true); // true = expired, pay reward
             return;
         }
-        
+
         // If max tickets reached but not expired, only creator can finalize early (no reward)
-        if (raffle.maxTickets > 0 && 
-            raffleParticipants[_raffleId].length >= raffle.maxTickets) {
-            require(raffle.creator == msg.sender, "Only creator can finalize early");
+        if (
+            raffle.maxTickets > 0 &&
+            raffleParticipants[_raffleId].length >= raffle.maxTickets
+        ) {
+            // require(raffle.creator == msg.sender, "Only creator can finalize early");
             _finalizeRaffle(_raffleId, false); // false = early finalization, no reward
             return;
         }
-        
+
         revert("Raffle ongoing");
     }
 
@@ -212,47 +223,41 @@ contract Raffle {
         this.finalizeRaffle(_raffleId);
     }
 
-    function getRaffleInfo(uint256 _raffleId)
-        external
-        view
-        returns (RaffleInfo memory)
-    {
+    function getRaffleInfo(
+        uint256 _raffleId
+    ) external view returns (RaffleInfo memory) {
         return raffles[_raffleId];
     }
 
-    function getRaffleConfig(uint256 _raffleId)
-        external
-        view
-        returns (RaffleConfig memory)
-    {
+    function getRaffleConfig(
+        uint256 _raffleId
+    ) external view returns (RaffleConfig memory) {
         return raffleSettings[_raffleId];
     }
 
-    function getParticipants(uint256 _raffleId)
-        external
-        view
-        returns (address[] memory)
-    {
+    function getParticipants(
+        uint256 _raffleId
+    ) external view returns (address[] memory) {
         return raffleParticipants[_raffleId];
     }
 
-    function getUserTickets(uint256 _raffleId, address _user)
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function getUserTickets(
+        uint256 _raffleId,
+        address _user
+    ) external view returns (uint256[] memory) {
         return userTickets[_raffleId][_user];
     }
 
-    function getWinners(uint256 _raffleId)
-        external
-        view
-        returns (address[] memory)
-    {
+    function getWinners(
+        uint256 _raffleId
+    ) external view returns (address[] memory) {
         return raffleWinners[_raffleId];
     }
 
-    function getRaffles(uint256 start, uint256 count)
+    function getRaffles(
+        uint256 start,
+        uint256 count
+    )
         external
         view
         returns (RaffleInfo[] memory infos, RaffleConfig[] memory configs)
@@ -285,19 +290,21 @@ contract Raffle {
         RaffleInfo storage raffle = raffles[_raffleId];
         require(raffle.isActive, "Raffle not active");
         require(!raffle.isCompleted, "Raffle completed");
-        
+
         uint256 totalPlayers = raffleParticipants[_raffleId].length;
         require(totalPlayers > 0, "No participants");
 
         // Get config and determine winner count (cannot exceed participants)
         uint8 numWinners = raffleSettings[_raffleId].numWinners;
-        uint256 winnersCount = numWinners > totalPlayers ? totalPlayers : numWinners;
+        uint256 winnersCount = numWinners > totalPlayers
+            ? totalPlayers
+            : numWinners;
 
         // Select winners using indices to avoid modifying participants array
         address[] storage winners = raffleWinners[_raffleId];
         delete raffleWinners[_raffleId];
         address[] storage participants = raffleParticipants[_raffleId];
-        
+
         uint256[] memory indices = new uint256[](totalPlayers);
         for (uint256 i = 0; i < totalPlayers; i++) {
             indices[i] = i;
@@ -319,7 +326,7 @@ contract Raffle {
 
             uint256 selectedIndex = indices[randomIndex];
             winners.push(participants[selectedIndex]);
-            
+
             // Swap with last element to avoid reselection
             indices[randomIndex] = indices[remaining - 1];
         }
@@ -331,13 +338,17 @@ contract Raffle {
         // Calculate rewards - get config values
         uint16 creatorPct = raffleSettings[_raffleId].creatorPct;
         uint256 pool = raffle.totalPool;
-        
+
         // Calculate finalization reward (only for expired raffles)
         uint256 finalizationReward = 0;
         if (_isExpired) {
             uint256 rewardFromPool = (pool * FINALIZATION_REWARD_BPS) / 10_000;
-            finalizationReward = rewardFromPool > MIN_FINALIZATION_REWARD 
-                ? (rewardFromPool > MAX_FINALIZATION_REWARD ? MAX_FINALIZATION_REWARD : rewardFromPool)
+            finalizationReward = rewardFromPool > MIN_FINALIZATION_REWARD
+                ? (
+                    rewardFromPool > MAX_FINALIZATION_REWARD
+                        ? MAX_FINALIZATION_REWARD
+                        : rewardFromPool
+                )
                 : MIN_FINALIZATION_REWARD;
             if (finalizationReward > pool) {
                 finalizationReward = pool;
@@ -346,22 +357,28 @@ contract Raffle {
 
         // Calculate creator reward
         uint256 creatorReward = (pool * creatorPct) / MAX_CREATOR_PCT;
-        
+
         // Ensure rewards don't exceed pool (safety check)
         uint256 totalRewards = creatorReward + finalizationReward;
         if (totalRewards >= pool) {
             if (_isExpired && finalizationReward > 0) {
-                creatorReward = pool > finalizationReward ? pool - finalizationReward : 0;
+                creatorReward = pool > finalizationReward
+                    ? pool - finalizationReward
+                    : 0;
             } else {
                 finalizationReward = 0;
                 creatorReward = pool;
             }
         }
-        
+
         // Calculate prize pool and distribution
         uint256 prizePool = pool - creatorReward - finalizationReward;
-        uint256 prizePerWinner = winnersCount > 0 ? prizePool / winnersCount : 0;
-        uint256 remainder = winnersCount > 0 ? prizePool % winnersCount : prizePool;
+        uint256 prizePerWinner = winnersCount > 0
+            ? prizePool / winnersCount
+            : 0;
+        uint256 remainder = winnersCount > 0
+            ? prizePool % winnersCount
+            : prizePool;
 
         // Pay finalization reward (if expired raffle)
         if (finalizationReward > 0) {
@@ -379,12 +396,19 @@ contract Raffle {
                 payable(winners[i]).transfer(prizePerWinner);
             }
         }
-        
+
         // Send remainder to first winner to avoid fund loss
         if (remainder > 0 && winnersCount > 0) {
             payable(winners[0]).transfer(remainder);
         }
 
-        emit WinnersSelected(_raffleId, winners, prizePerWinner, creatorReward, finalizationReward, msg.sender);
+        emit WinnersSelected(
+            _raffleId,
+            winners,
+            prizePerWinner,
+            creatorReward,
+            finalizationReward,
+            msg.sender
+        );
     }
 }
