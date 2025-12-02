@@ -64,7 +64,7 @@ export default function Home() {
   // Get all categories currently present in the data and 
   // return "All" with the sorted list of unique categories
   const uniqueCategories = useMemo(() => {
-    const categories = new Set(raffles.map(r => r.category || "Other"));
+    const categories = new Set(raffles.map(r => r.category || "General"));
     return ["All", ...Array.from(categories).sort()];
   }, [raffles]);
 
