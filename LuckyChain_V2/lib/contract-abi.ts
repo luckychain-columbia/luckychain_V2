@@ -264,6 +264,11 @@ export const RAFFLE_ABI = [
         "type": "string"
       },
       {
+        "internalType": "string",
+        "name": "_category",
+        "type": "string"
+      },
+      {
         "internalType": "uint256",
         "name": "_ticketPrice",
         "type": "uint256"
@@ -414,6 +419,11 @@ export const RAFFLE_ABI = [
             "type": "string"
           },
           {
+            "internalType": "string",
+            "name": "category",
+            "type": "string"
+          },
+          {
             "internalType": "uint256",
             "name": "ticketPrice",
             "type": "uint256"
@@ -487,6 +497,11 @@ export const RAFFLE_ABI = [
           {
             "internalType": "string",
             "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "category",
             "type": "string"
           },
           {
