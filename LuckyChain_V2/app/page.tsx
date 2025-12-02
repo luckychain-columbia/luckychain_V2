@@ -35,6 +35,7 @@ export default function Home() {
   );
   const { account: address } = useWeb3();
   const { loadRaffles: loadRafflesFromContract } = useContract();
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const handleLoadRaffles = useCallback(async () => {
     try {
@@ -60,25 +61,34 @@ export default function Home() {
     // return () => clearInterval(interval);
   }, [handleLoadRaffles]);
 
+  // Get all categories currently present in the data and 
+  // return "All" with the sorted list of unique categories
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set(raffles.map(r => r.category || "Other"));
+    return ["All", ...Array.from(categories).sort()];
+  }, [raffles]);
+
   // Memoize filtered raffles to avoid recalculating on every render
   // Calculate current time inside the filter functions for accuracy
   const activeRaffles = useMemo(() => {
     const nowSeconds = Math.floor(Date.now() / 1000);
     return raffles.filter((raffle) => {
+      if (selectedCategory !== "All" && raffle.category !== selectedCategory) return false;
       if (!raffle.isActive || raffle.isCompleted) return false;
       const endTimestamp = Number(raffle.endTime ?? 0);
       return endTimestamp === 0 || endTimestamp > nowSeconds;
     });
-  }, [raffles]);
+  }, [raffles, selectedCategory]);
 
   const endedRaffles = useMemo(() => {
     const nowSeconds = Math.floor(Date.now() / 1000);
     return raffles.filter((raffle) => {
+      if (selectedCategory !== "All" && raffle.category !== selectedCategory) return false;
       if (!raffle.isActive || raffle.isCompleted) return true;
       const endTimestamp = Number(raffle.endTime ?? 0);
       return endTimestamp > 0 && endTimestamp <= nowSeconds;
     });
-  }, [raffles]);
+  }, [raffles, selectedCategory]);
 
   const createdRaffles = useMemo(() => {
     if (!address) return [];
@@ -220,6 +230,22 @@ export default function Home() {
               ))}
             </TabsList>
           </div>
+
+          <div className="flex gap-2 mb-6 mt-6 overflow-x-auto pb-2">
+              {uniqueCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === cat
+                      ? "bg-purple-600 text-white"
+                      : "bg-white/10 text-gray-300 hover:bg-white/20"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
 
           <TabsContent value="active" className="mt-0">
             {isLoading ? (
