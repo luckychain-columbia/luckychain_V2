@@ -44,7 +44,6 @@ contract Raffle {
         uint256 indexed raffleId,
         address indexed creator,
         string title,
-        string category,
         uint256 ticketPrice,
         uint256 maxTickets,
         uint256 endTime,
