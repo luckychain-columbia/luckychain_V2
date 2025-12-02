@@ -15,6 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import useContract from "@/hooks/use-contract";
@@ -35,6 +42,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    category: "General",
     entryFee: "",
     creatorFee: 5,
     numberOfWinners: "1",
@@ -160,6 +168,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
       await createRaffle({
         title: formData.title.trim(),
         description: (formData.description || formData.title).trim(),
+        category: formData.category.trim() || "General",
         entryFee: formData.entryFee,
         endDateTime: endTimestamp,
         numWinners,
@@ -185,6 +194,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
       setFormData({
         title: "",
         description: "",
+        category: "General",
         entryFee: "",
         creatorFee: 5,
         numberOfWinners: "1",
@@ -265,6 +275,22 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="category" className="text-white font-medium">
+              Category
+            </Label>
+            <Input
+              id="category"
+              placeholder="Categorize your raffle (it defaults to General)..."
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value.slice(0, 20) })
+              }
+              maxLength={20}
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
+          </div>
+          
           <div className="space-y-2">
             <Label htmlFor="entryFee" className="text-white font-medium">
               Entry Fee (ETH) <span className="text-red-400">*</span>
