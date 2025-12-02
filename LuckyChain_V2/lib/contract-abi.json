@@ -262,6 +262,11 @@
         "type": "string"
       },
       {
+        "internalType": "string",
+        "name": "_category",
+        "type": "string"
+      },
+      {
         "internalType": "uint256",
         "name": "_ticketPrice",
         "type": "uint256"
@@ -412,6 +417,11 @@
             "type": "string"
           },
           {
+            "internalType": "string",
+            "name": "category",
+            "type": "string"
+          },
+          {
             "internalType": "uint256",
             "name": "ticketPrice",
             "type": "uint256"
@@ -485,6 +495,11 @@
           {
             "internalType": "string",
             "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "category",
             "type": "string"
           },
           {

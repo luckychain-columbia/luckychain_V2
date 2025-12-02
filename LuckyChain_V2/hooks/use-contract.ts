@@ -176,6 +176,7 @@ const useContract = () => {
     const createRaffle = async (params: {
       title: string;
       description: string;
+      category: string;
       entryFee: string;
       endDateTime: number;
       numWinners: number;
@@ -331,6 +332,7 @@ const useContract = () => {
         const tx = await contract.createRaffle(
           params.title.trim(),
           params.description?.trim() || params.title.trim(),
+          params.category,
           entryFeeWei,
           BigInt(params.endDateTime),
           params.numWinners,

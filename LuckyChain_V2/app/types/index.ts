@@ -5,6 +5,7 @@ export interface RaffleData {
   creator: string;
   title: string;
   description: string;
+  category: string;
   ticketPrice: bigint;
   maxTickets: bigint;
   endTime: bigint;
@@ -34,6 +35,7 @@ export interface Ticket {
   id: string;
   raffleId: string;
   raffleTitle: string;
+  category: string;
   entryFee: string;
   ticketCount: number; // How many tickets the user has for this raffle
   prizePercentage?: number;

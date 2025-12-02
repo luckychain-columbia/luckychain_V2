@@ -430,6 +430,12 @@ export const RaffleCard = memo(function RaffleCard({
         <div className="space-y-3 flex-shrink-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              <Badge 
+                variant="outline" 
+                className="glass text-purple-300 border-purple-500/30"
+              >
+                {raffle.category || "General"}
+              </Badge>
               {isActuallyEnded ? (
                 <Badge
                   variant="secondary"

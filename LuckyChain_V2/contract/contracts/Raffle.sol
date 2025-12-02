@@ -6,6 +6,7 @@ contract Raffle {
         address creator;
         string title;
         string description;
+        string category;
         uint256 ticketPrice;
         uint256 maxTickets; // 0 = unlimited
         uint256 endTime;
@@ -76,6 +77,7 @@ contract Raffle {
     function createRaffle(
         string memory _title,
         string memory _description,
+        string memory _category,
         uint256 _ticketPrice,
         uint256 _endDateTime,
         uint8 _numWinners,
@@ -108,6 +110,7 @@ contract Raffle {
             creator: msg.sender,
             title: _title,
             description: _description,
+            category: _category,
             ticketPrice: _ticketPrice,
             maxTickets: _maxTickets,
             endTime: _endDateTime,
