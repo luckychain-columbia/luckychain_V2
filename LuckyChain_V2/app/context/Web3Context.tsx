@@ -20,7 +20,9 @@ interface Web3ContextType {
   provider: BrowserProvider | null; // The ethers.js provider to interact with blockchain
   isConnecting: boolean; // Loading state for connection
   availableWallets: WalletProvider[]; // List of available wallet providers
-  selectWallet: (wallet: WalletProvider) => Promise<void>; // Function to select a specific wallet
+  selectWallet: (wallet: WalletProvider) => Promise<void>; // Function to select a specific wallet,
+  userRaffles: number[];
+  updateUserRaffles: (value: number[]) => void;
 }
 
 const Web3Context = createContext<Web3ContextType>({
@@ -31,6 +33,8 @@ const Web3Context = createContext<Web3ContextType>({
   isConnecting: false,
   availableWallets: [],
   selectWallet: async () => {},
+  userRaffles: [],
+  updateUserRaffles: () => {},
 });
 
 // Custom hook to use this context easily in other components
@@ -70,6 +74,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     []
   );
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [userRaffles, setUserRaffles] = useState<number[]>([]);
 
   // Detect available wallets on mount
   useEffect(() => {
@@ -231,6 +236,8 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
         isConnecting,
         availableWallets,
         selectWallet,
+        userRaffles,
+        updateUserRaffles: setUserRaffles,
       }}
     >
       {children}

@@ -34,7 +34,7 @@ export const RaffleCard = memo(function RaffleCard({
 }: RaffleCardProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const { account } = useWeb3();
+  const { account, userRaffles, updateUserRaffles } = useWeb3();
 
   const [isLoading, setIsLoading] = useState(false);
   const [ticketCount, setTicketCount] = useState<number>(1);
@@ -180,9 +180,7 @@ export const RaffleCard = memo(function RaffleCard({
 
   const handleBuyTicket = useCallback(async () => {
     // Prevent multiple simultaneous transactions
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return;
 
     if (!account) {
       toast({
@@ -252,6 +250,7 @@ export const RaffleCard = memo(function RaffleCard({
       }
 
       await buyTicket(raffle.id, ticketPriceEth, desiredTicketCount);
+      updateUserRaffles([...userRaffles, raffle.id]);
       toast({
         title: "Success!",
         description:

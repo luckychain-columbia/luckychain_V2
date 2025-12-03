@@ -33,20 +33,19 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"active" | "ended" | "my">(
     "active"
   );
-  const { account: address } = useWeb3();
+  const { account: address, userRaffles, updateUserRaffles } = useWeb3();
   const { loadRaffles: loadRafflesFromContract, getUserParticipatedRaffleIds } =
     useContract();
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [userRaffles, setUserRaffles] = useState<number[]>([]);
 
   const handleUserRaffles = useCallback(
     async (acc: string) => {
       try {
         const data = await getUserParticipatedRaffleIds(acc);
-        setUserRaffles(data);
+        updateUserRaffles(data);
       } catch (error) {
         console.error("Failed to load user raffles:", error);
-        setUserRaffles([]);
+        updateUserRaffles([]);
       } finally {
         setIsLoadingUserRaffles(false);
       }
