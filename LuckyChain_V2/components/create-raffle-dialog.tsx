@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -49,15 +49,8 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
     endDateTime: "",
     maxEntrants: "",
     allowMultipleEntries: true,
-    seedPrizePool: "0.005", // Minimum required: 0.005 ETH to cover finalization gas costs
+    seedPrizePool: "",
   });
-
-  // Calculate max date (1 year in future) - no min to allow flexibility
-  const maxDateTime = useMemo(() => {
-    const maxDate = new Date();
-    maxDate.setFullYear(maxDate.getFullYear() + 1);
-    return maxDate.toISOString().slice(0, 16);
-  }, [open]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -154,27 +147,23 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
       // Validate creator fee
       const creatorFee = Math.max(0, Math.min(100, formData.creatorFee));
 
-      // Validate seed prize pool (required - minimum 0.005 ETH to cover gas costs)
-      if (!formData.seedPrizePool.trim()) {
-        throw new Error(
-          "Seed prize pool is required. Minimum 0.005 ETH is needed to cover finalization gas costs."
-        );
+      // Validate seed prize pool (optional)
+      let seedPrizePool: string | undefined = undefined;
+      if (formData.seedPrizePool.trim().length > 0) {
+        const seedAmount = parseFloat(formData.seedPrizePool);
+        if (isNaN(seedAmount) || seedAmount < 0) {
+          throw new Error(
+            "Seed prize pool must be a valid number greater than or equal to 0"
+          );
+        }
+        if (seedAmount > 1000) {
+          throw new Error("Seed prize pool cannot exceed 1000 ETH");
+        }
+        if (!Number.isFinite(seedAmount)) {
+          throw new Error("Seed prize pool must be a valid number");
+        }
+        seedPrizePool = formData.seedPrizePool;
       }
-      
-      const seedAmount = parseFloat(formData.seedPrizePool);
-      if (isNaN(seedAmount) || seedAmount < 0.005) {
-        throw new Error(
-          "Seed prize pool must be at least 0.005 ETH to ensure finalization gas costs are covered"
-        );
-      }
-      if (seedAmount > 1000) {
-        throw new Error("Seed prize pool cannot exceed 1000 ETH");
-      }
-      if (!Number.isFinite(seedAmount)) {
-        throw new Error("Seed prize pool must be a valid number");
-      }
-      
-      const seedPrizePool = formData.seedPrizePool;
 
       await createRaffle({
         title: formData.title.trim(),
@@ -189,11 +178,16 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
         seedPrizePool,
       });
 
-      const seedAmountDisplay = `${parseFloat(seedPrizePool).toFixed(4)} ETH`;
+      const seedAmount =
+        seedPrizePool && parseFloat(seedPrizePool) > 0
+          ? `${parseFloat(seedPrizePool).toFixed(4)} ETH`
+          : null;
 
       toast({
         title: "Success!",
-        description: `Raffle created successfully with ${seedAmountDisplay} seeded prize pool!`,
+        description: seedAmount
+          ? `Raffle created successfully with ${seedAmount} seeded prize pool!`
+          : "Raffle created successfully",
       });
 
       setOpen(false);
@@ -207,7 +201,7 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
         endDateTime: "",
         maxEntrants: "",
         allowMultipleEntries: true,
-        seedPrizePool: "0.005",
+        seedPrizePool: "",
       });
       onSuccess?.();
     } catch (error: any) {
@@ -285,47 +279,21 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
             <Label htmlFor="category" className="text-white font-medium">
               Category
             </Label>
-            <Select
+            <Input
+              id="category"
+              placeholder="Categorize your raffle (it defaults to General)..."
               value={formData.category}
-              onValueChange={(value) =>
-                setFormData({ ...formData, category: value })
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value.slice(0, 20),
+                })
               }
-            >
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent className="bg-black/90 border-white/20">
-                <SelectItem value="General" className="text-white focus:bg-white/20">
-                  General
-                </SelectItem>
-                <SelectItem value="Sports" className="text-white focus:bg-white/20">
-                  Sports
-                </SelectItem>
-                <SelectItem value="Gaming" className="text-white focus:bg-white/20">
-                  Gaming
-                </SelectItem>
-                <SelectItem value="Crypto" className="text-white focus:bg-white/20">
-                  Crypto
-                </SelectItem>
-                <SelectItem value="NFT" className="text-white focus:bg-white/20">
-                  NFT
-                </SelectItem>
-                <SelectItem value="Entertainment" className="text-white focus:bg-white/20">
-                  Entertainment
-                </SelectItem>
-                <SelectItem value="Technology" className="text-white focus:bg-white/20">
-                  Technology
-                </SelectItem>
-                <SelectItem value="Charity" className="text-white focus:bg-white/20">
-                  Charity
-                </SelectItem>
-                <SelectItem value="Community" className="text-white focus:bg-white/20">
-                  Community
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              maxLength={20}
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+            />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="entryFee" className="text-white font-medium">
               Entry Fee (ETH) <span className="text-red-400">*</span>
@@ -448,17 +416,14 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
               id="endDateTime"
               type="datetime-local"
               value={formData.endDateTime}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Allow any input - we'll validate on submit
-                setFormData({ ...formData, endDateTime: value });
-              }}
-              max={maxDateTime}
+              onChange={(e) =>
+                setFormData({ ...formData, endDateTime: e.target.value })
+              }
               required
               className="bg-white/10 border-white/20 text-white"
             />
             <p className="text-sm text-gray-400">
-              When the raffle will automatically end and select winners. Must be at least 1 minute in the future.
+              When the raffle will automatically end and select winners
             </p>
           </div>
 
@@ -530,15 +495,15 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
           <div className="space-y-2">
             <Label htmlFor="seedPrizePool" className="text-white font-medium">
               Seed Prize Pool (ETH){" "}
-              <span className="text-red-400">*</span>
+              <span className="text-gray-400 text-xs">(Optional)</span>
             </Label>
             <Input
               id="seedPrizePool"
               type="number"
               step="0.0001"
-              min="0.005"
+              min="0"
               max="1000"
-              placeholder="0.005"
+              placeholder="0.0"
               value={formData.seedPrizePool}
               onChange={(e) => {
                 const value = e.target.value;
@@ -548,10 +513,10 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
                   return;
                 }
                 const numValue = parseFloat(value);
-                // Validate: must be at least 0.005 ETH (minimum finalization reward to cover gas costs)
+                // Validate: must be non-negative and finite
                 if (
                   !isNaN(numValue) &&
-                  numValue >= 0.005 &&
+                  numValue >= 0 &&
                   numValue <= 1000 &&
                   Number.isFinite(numValue)
                 ) {
@@ -561,7 +526,9 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
             <p className="text-sm text-gray-400">
-              <strong className="text-white">Required:</strong> Minimum 0.005 ETH to ensure finalization gas costs are covered (typical gas ~0.005 ETH). This ETH will be added to the prize pool and distributed to winners along with ticket purchases.
+              Add an initial amount to the prize pool to kickstart your raffle.
+              This ETH will be added to the pool and distributed to winners
+              along with ticket purchases.
             </p>
           </div>
 
