@@ -189,6 +189,7 @@ export const cacheKeys = {
   rafflesList: () => "raffles:list",
   raffleInfo: (id: number) => `raffle:${id}:info`,
   raffleConfig: (id: number) => `raffle:${id}:config`,
+  raffleParticipants: (id: number) => `raffle:${id}:participants`,
   raffleWinners: (id: number) => `raffle:${id}:winners`,
   raffleCount: () => "raffle:count",
 };

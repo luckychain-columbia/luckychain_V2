@@ -389,6 +389,9 @@ const useContract = () => {
       }
 
       // Validate inputs
+      if (raffleId === null || raffleId === undefined || isNaN(Number(raffleId))) {
+        throw new Error("Invalid raffle ID");
+      }
       validateTicketCount(ticketCount);
       if (ticketPriceEth <= 0) {
         throw new Error("Invalid ticket price");

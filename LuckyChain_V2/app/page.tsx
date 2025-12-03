@@ -299,13 +299,15 @@ export default function Home() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeRaffles.map((r) => (
-                  <RaffleCard
-                    key={r.id}
-                    raffle={r}
-                    onUpdate={handleLoadRaffles}
-                  />
-                ))}
+                {activeRaffles
+                  .filter((r) => r.id != null && r.id !== undefined)
+                  .map((r) => (
+                    <RaffleCard
+                      key={r.id}
+                      raffle={r}
+                      onUpdate={handleLoadRaffles}
+                    />
+                  ))}
               </div>
             )}
           </TabsContent>
@@ -329,13 +331,15 @@ export default function Home() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {endedRaffles.map((raffle) => (
-                  <RaffleCard
-                    key={raffle.id}
-                    raffle={raffle}
-                    onUpdate={handleRaffleUpdate}
-                  />
-                ))}
+                {endedRaffles
+                  .filter((raffle) => raffle.id != null && raffle.id !== undefined)
+                  .map((raffle) => (
+                    <RaffleCard
+                      key={raffle.id}
+                      raffle={raffle}
+                      onUpdate={handleRaffleUpdate}
+                    />
+                  ))}
               </div>
             )}
           </TabsContent>
@@ -375,13 +379,15 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredEnteredRaffles.map((raffle) => (
-                        <RaffleCard
-                          key={raffle.id}
-                          raffle={raffle}
-                          onUpdate={handleRaffleUpdate}
-                        />
-                      ))}
+                      {filteredEnteredRaffles
+                        .filter((raffle) => raffle.id != null && raffle.id !== undefined)
+                        .map((raffle) => (
+                          <RaffleCard
+                            key={raffle.id}
+                            raffle={raffle}
+                            onUpdate={handleRaffleUpdate}
+                          />
+                        ))}
                     </div>
                   )}
                 </div>
@@ -404,13 +410,15 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {createdRaffles.map((raffle) => (
-                        <RaffleCard
-                          key={raffle.id}
-                          raffle={raffle}
-                          onUpdate={handleRaffleUpdate}
-                        />
-                      ))}
+                      {createdRaffles
+                        .filter((raffle) => raffle.id != null && raffle.id !== undefined)
+                        .map((raffle) => (
+                          <RaffleCard
+                            key={raffle.id}
+                            raffle={raffle}
+                            onUpdate={handleRaffleUpdate}
+                          />
+                        ))}
                     </div>
                   )}
                 </div>
