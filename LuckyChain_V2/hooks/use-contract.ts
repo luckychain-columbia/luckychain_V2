@@ -91,7 +91,7 @@ const useContract = () => {
         // Cache the entire list
         contractCache.set(cacheKey, raffles, contractCache.getRafflesListTTL());
 
-        return raffles.map((l: any, i: number) => normalizeLottery(l, null, i));
+        return raffles.map((l: any, i: number) => normalizeLottery(l, i));
       } catch (error) {
         console.error("Failed to load raffles:", error);
         return [];
