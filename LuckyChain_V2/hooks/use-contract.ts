@@ -6,6 +6,7 @@ import { useWeb3 } from "../app/context/Web3Context";
 import { RAFFLE_ABI } from "@/lib/contract-abi";
 import { RAFFLE_CONTRACT_ADDRESS, isWeb3Available } from "@/lib/web3";
 import { ContractRaffle } from "@/app/types";
+// import { MOCK_RAFFLES } from "../lib/mock-data";
 import { contractCache, cacheKeys } from "@/lib/contract-cache";
 import {
   extractErrorMessage,
@@ -33,6 +34,8 @@ const useContract = () => {
     };
 
     const getContract = async (withSigner = false) => {
+      console.log("Network:", await provider?.getNetwork());
+      
       if (!isWeb3Available()) {
         return null;
       }
@@ -81,14 +84,14 @@ const useContract = () => {
           return cached;
         }
 
-        const raffles = await loadRafflesBatch(contract, count).catch(
-          () => null
-        );
+        const raffles =
+          (await loadRafflesBatch(contract, count).catch(() => null)) ??
+          (await loadRafflesIndividually(contract, count));
 
         // Cache the entire list
         contractCache.set(cacheKey, raffles, contractCache.getRafflesListTTL());
 
-        return raffles;
+        return raffles.map((l: any, i: number) => normalizeLottery(l, null, i));
       } catch (error) {
         console.error("Failed to load raffles:", error);
         return [];
@@ -96,18 +99,20 @@ const useContract = () => {
     };
 
     const loadRafflesBatch = async (contract: any, count: number) => {
-      const [infos, configs, winners, participantCounts] =
-        await contract.getRafflesWithWinners(0, count);
+      const [infos, configs] = await contract.getRaffles(0, count);
+
+      const winners = await Promise.all(
+        infos.map((_: any, i: number) => getWinners(i))
+      );
 
       return infos.map((info: any, i: number) => {
         const raffle: ContractRaffle = {
-          ...normalizeLottery(info, i),
+          ...info,
           id: i,
           numWinners: Number(configs?.[i]?.numWinners ?? 1),
           creatorPct: Number(configs?.[i]?.creatorPct ?? 0),
           allowMultipleEntries: Boolean(configs?.[i]?.allowMultipleEntries),
           winners: winners[i] ?? [],
-          participantCounts: Number(participantCounts[i]) || 0,
         };
 
         contractCache.set(
@@ -120,24 +125,51 @@ const useContract = () => {
       });
     };
 
-    const getUserParticipatedRaffleIds = async (
-      address: string
-    ): Promise<number[]> => {
-      if (!address) return [];
+    const loadRafflesIndividually = async (contract: any, count: number) => {
+      const promises = Array.from({ length: count }, (_, i) =>
+        loadRaffleById(contract, i)
+      );
 
-      const contract = await getContract(false);
-      if (!contract) return [];
+      const results = await Promise.all(promises);
+      return results.filter((x): x is ContractRaffle => x !== null);
+    };
 
+    const loadRaffleById = async (
+      contract: any,
+      id: number
+    ): Promise<ContractRaffle | null> => {
       try {
-        const raffleIds: bigint[] = await contract.getUserEnteredRaffles(
-          address
+        const infoKey = cacheKeys.raffleInfo(id);
+        const cached = contractCache.get<ContractRaffle>(infoKey);
+        if (cached) return cached;
+
+        const info = await contract.getRaffleInfo(id);
+        const isCompleted = info.isCompleted ?? false;
+
+        const [config, winners] = await Promise.all([
+          contract.getRaffleConfig(id).catch(() => null),
+          getWinners(id),
+        ]);
+
+        const raffleData: ContractRaffle = {
+          ...info,
+          id: id,
+          numWinners: Number(config?.numWinners ?? 1),
+          creatorPct: Number(config?.creatorPct ?? 0),
+          allowMultipleEntries: Boolean(config?.allowMultipleEntries),
+          winners: winners || [],
+        };
+
+        contractCache.set(
+          infoKey,
+          raffleData,
+          contractCache.getRaffleTTL(isCompleted)
         );
 
-        // Convert BigInt[] → number[]
-        return raffleIds.map((id) => Number(id));
+        return raffleData;
       } catch (err) {
-        console.error("Failed to load participated raffle IDs:", err);
-        return [];
+        console.warn(`Failed to load raffle ${id}:`, err);
+        return null;
       }
     };
 
@@ -225,33 +257,37 @@ const useContract = () => {
           ? BigInt(params.maxEntrants)
           : BigInt(0);
 
-      // Validate and parse seed prize pool (optional)
-      let seedAmountWei = BigInt(0);
+      // Validate and parse seed prize pool (required - minimum 0.005 ETH to cover gas costs)
       if (
-        params.seedPrizePool !== undefined &&
-        params.seedPrizePool.trim().length > 0
+        !params.seedPrizePool ||
+        params.seedPrizePool.trim().length === 0
       ) {
-        const seedAmountNum = Number(params.seedPrizePool);
-        if (
-          isNaN(seedAmountNum) ||
-          seedAmountNum < 0 ||
-          !Number.isFinite(seedAmountNum)
-        ) {
-          throw new Error(
-            "Seed prize pool must be a valid number greater than or equal to 0"
-          );
-        }
-        if (seedAmountNum > 1000) {
-          throw new Error("Seed prize pool cannot exceed 1000 ETH");
-        }
-        seedAmountWei = validateAndParseEther(
-          params.seedPrizePool,
-          "seed prize pool"
+        throw new Error(
+          "Seed prize pool is required. Minimum 0.005 ETH is needed to cover finalization gas costs."
         );
       }
+      
+      const seedAmountNum = Number(params.seedPrizePool);
+      if (
+        isNaN(seedAmountNum) ||
+        seedAmountNum < 0.005 ||
+        !Number.isFinite(seedAmountNum)
+      ) {
+        throw new Error(
+          "Seed prize pool must be at least 0.005 ETH to ensure finalization gas costs are covered"
+        );
+      }
+      if (seedAmountNum > 1000) {
+        throw new Error("Seed prize pool cannot exceed 1000 ETH");
+      }
+      
+      const seedAmountWei = validateAndParseEther(
+        params.seedPrizePool,
+        "seed prize pool"
+      );
 
-      // Check balance if seeding prize pool
-      if (seedAmountWei > BigInt(0) && provider) {
+      // Check balance for seed prize pool (required)
+      if (provider) {
         try {
           const balance = await provider.getBalance(account);
           // Estimate gas cost (rough estimate: 200,000 gas * 20 gwei = 0.004 ETH)
@@ -382,10 +418,56 @@ const useContract = () => {
           throw new Error("Invalid total value - would be zero or negative");
         }
 
-        // Pre-check balance to provide better error message
+        // Estimate gas for ticket purchase (industry standard: dynamic estimation with buffer)
+        let gasEstimate: bigint;
+        let estimatedGasCost: bigint;
+        
+        try {
+          // Estimate actual gas needed for this transaction
+          gasEstimate = await contract.buyTickets.estimateGas(
+            BigInt(raffleId),
+            BigInt(ticketCount),
+            {
+              value: totalValue,
+            }
+          );
+          
+          // Add 20% buffer for safety (industry standard: 10-30%)
+          gasEstimate = (gasEstimate * BigInt(120)) / BigInt(100);
+          
+          // Get current gas price from network
+          const feeData = await provider?.getFeeData();
+          const gasPrice = feeData?.gasPrice || ethers.parseUnits("20", "gwei");
+          
+          // Calculate estimated gas cost in ETH
+          estimatedGasCost = gasEstimate * gasPrice;
+          
+          // Cap at reasonable maximum (300k gas should be plenty for ticket purchase)
+          if (gasEstimate > BigInt(300000)) {
+            gasEstimate = BigInt(300000);
+            estimatedGasCost = gasEstimate * gasPrice;
+          }
+          
+          // Ensure minimum gas (50k should be enough for simple purchase)
+          if (gasEstimate < BigInt(50000)) {
+            gasEstimate = BigInt(50000);
+            estimatedGasCost = gasEstimate * gasPrice;
+          }
+        } catch (estimateError: any) {
+          console.warn("Gas estimation failed, using conservative defaults:", estimateError.message);
+          // Use conservative default: 150k gas
+          gasEstimate = BigInt(150000);
+          const feeData = await provider?.getFeeData();
+          const gasPrice = feeData?.gasPrice || ethers.parseUnits("20", "gwei");
+          estimatedGasCost = gasEstimate * gasPrice;
+        }
+
+        // Pre-check balance to provide better error message (industry standard)
         if (provider) {
           try {
             const balance = await provider.getBalance(account);
+            const totalRequired = totalValue + estimatedGasCost;
+            
             if (balance < totalValue) {
               const balanceEth = Number(formatEther(balance));
               const requiredEth = ticketPriceEth * ticketCount;
@@ -397,29 +479,28 @@ const useContract = () => {
               );
             }
 
-            // Estimate gas cost (rough estimate: 100,000 gas * 20 gwei = 0.002 ETH)
-            // This is a conservative estimate - actual gas may vary
-            const estimatedGasCost = ethers.parseEther("0.002"); // 0.002 ETH for gas
-            const totalRequired = totalValue + estimatedGasCost;
-
-            // Warn if balance is close to required amount (might not have enough for gas)
-            if (balance < totalRequired && balance >= totalValue) {
+            // Check if balance covers transaction + gas (industry standard)
+            if (balance < totalRequired) {
               const balanceEth = Number(formatEther(balance));
               const requiredEth = ticketPriceEth * ticketCount;
-              console.warn(
-                `Warning: Balance (${balanceEth.toFixed(
+              const gasEth = Number(formatEther(estimatedGasCost));
+              
+              throw new Error(
+                `Insufficient balance for gas fees. You have ${balanceEth.toFixed(
                   4
-                )} ETH) may not cover gas fees. Required: ${requiredEth.toFixed(
+                )} ETH, but need ${(requiredEth + gasEth).toFixed(
                   4
-                )} ETH + gas`
+                )} ETH total (${requiredEth.toFixed(4)} ETH for tickets + ~${gasEth.toFixed(
+                  4
+                )} ETH for gas)`
               );
-              // Don't throw error - let transaction attempt, contract will reject if insufficient
             }
           } catch (balanceError: any) {
-            // If balance check fails, continue - contract will reject with better error
+            // If balance check fails, throw the error with clear message
             if (
               balanceError.message &&
-              balanceError.message.includes("Insufficient balance")
+              (balanceError.message.includes("Insufficient balance") ||
+               balanceError.message.includes("gas"))
             ) {
               throw balanceError;
             }
@@ -427,8 +508,10 @@ const useContract = () => {
           }
         }
 
-        const tx = await contract.buyTickets(raffleId, BigInt(ticketCount), {
+        // Execute transaction with explicit gas limit (industry standard)
+        const tx = await contract.buyTickets(BigInt(raffleId), BigInt(ticketCount), {
           value: totalValue,
+          gasLimit: gasEstimate,
         });
 
         // Wait for transaction with timeout
@@ -464,8 +547,32 @@ const useContract = () => {
       }
 
       try {
+        // Estimate gas for finalization - this can be very gas-intensive
+        // Finalization involves: selecting winners, calculating rewards, and multiple transfers
+        let gasEstimate: bigint;
+        try {
+          // Estimate gas needed
+          gasEstimate = await contract.selectWinner.estimateGas(raffleId);
+          // Add 30% buffer to prevent out-of-gas errors
+          gasEstimate = (gasEstimate * BigInt(130)) / BigInt(100);
+          // Cap at reasonable maximum (2 million gas should be plenty)
+          if (gasEstimate > BigInt(2000000)) {
+            gasEstimate = BigInt(2000000);
+          }
+          // Ensure minimum gas (500k should be enough for most cases)
+          if (gasEstimate < BigInt(500000)) {
+            gasEstimate = BigInt(500000);
+          }
+        } catch (estimateError: any) {
+          console.warn("Gas estimation failed, using default:", estimateError.message);
+          // Use a conservative default: 1.5 million gas for finalization
+          // This should be enough for: winner selection + rewards + multiple transfers
+          gasEstimate = BigInt(1500000);
+        }
+
+        // Execute transaction with explicit gas limit
         const tx = await contract.selectWinner(raffleId, {
-          gasLimit: BigInt(3_000_000),
+          gasLimit: gasEstimate,
         });
 
         // Wait for transaction with timeout
@@ -476,12 +583,75 @@ const useContract = () => {
         // invalidateRaffle already invalidates all raffle-related caches including winners and list
         contractCache.invalidateRaffle(raffleId);
 
-        await loadRaffles();
-
         return receipt;
       } catch (err: any) {
         console.error("Error selecting winner:", err);
         throw new Error(extractErrorMessage(err, "Failed to select winner"));
+      }
+    };
+
+    const getTicketCount = async (
+      raffleId: number,
+      userAddress?: string
+    ): Promise<number> => {
+      const address = userAddress || account;
+      if (!address) return 0;
+
+      const contract = await getContract(false);
+      if (!contract) return 0;
+
+      try {
+        const tickets = await contract.getUserTickets(raffleId, address);
+        return Array.isArray(tickets) ? tickets.length : 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    const getParticipants = async (raffleId: number): Promise<string[]> => {
+      const contract = await getContract(false);
+      if (!contract) return [];
+
+      // Check cache first
+      const cacheKey = cacheKeys.raffleParticipants(raffleId);
+      const ttl = contractCache.getParticipantsTTL();
+
+      try {
+        return await contractCache.getOrFetch(
+          cacheKey,
+          () => contract.getParticipants(raffleId).catch(() => []),
+          ttl
+        );
+      } catch {
+        return [];
+      }
+    };
+
+    const getWinners = async (raffleId: number): Promise<string[]> => {
+      const contract = await getContract(false);
+      if (!contract) return [];
+
+      // Check cache first
+      const cacheKey = cacheKeys.raffleWinners(raffleId);
+
+      try {
+        // Determine if raffle is completed (use cached info if available)
+        const cachedRaffle = contractCache.get<ContractRaffle>(
+          cacheKeys.raffleInfo(raffleId)
+        );
+        const isCompleted = cachedRaffle?.isCompleted === true;
+
+        const ttl = isCompleted
+          ? Infinity
+          : contractCache.getRaffleTTL(isCompleted);
+
+        return await contractCache.getOrFetch(
+          cacheKey,
+          () => contract.getWinners(raffleId).catch(() => []),
+          ttl
+        );
+      } catch {
+        return [];
       }
     };
 
@@ -490,7 +660,9 @@ const useContract = () => {
       createRaffle,
       buyTicket,
       selectWinner,
-      getUserParticipatedRaffleIds,
+      getTicketCount,
+      getParticipants,
+      getWinners,
     };
   }, [provider, account]);
 };
