@@ -34,8 +34,10 @@ export default function Home() {
     "active"
   );
   const { account: address } = useWeb3();
-  const { loadRaffles: loadRafflesFromContract } = useContract();
+  const { loadRaffles: loadRafflesFromContract, getTicketCount } = useContract();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [enteredRaffles, setEnteredRaffles] = useState<ContractRaffle[]>([]);
+  const [isCheckingEnteredRaffles, setIsCheckingEnteredRaffles] = useState(false);
 
   const handleLoadRaffles = useCallback(async () => {
     try {
@@ -93,21 +95,51 @@ export default function Home() {
   const createdRaffles = useMemo(() => {
     if (!address) return [];
     const addressLower = address.toLowerCase();
-    return raffles.filter(
-      (raffle) => raffle.creator?.toLowerCase() === addressLower
-    );
-  }, [raffles, address]);
-
-  const enteredRaffles = useMemo(() => {
-    if (!address) return [];
-    const addressLower = address.toLowerCase();
     return raffles.filter((raffle) => {
-      const participants = raffle.participants || [];
-      return participants.some(
-        (p: string) => p?.toLowerCase() === addressLower
-      );
+      if (selectedCategory !== "All" && raffle.category !== selectedCategory) return false;
+      return raffle.creator?.toLowerCase() === addressLower;
     });
-  }, [raffles, address]);
+  }, [raffles, address, selectedCategory]);
+
+  // Check which raffles the user has entered by checking their ticket count
+  useEffect(() => {
+    const checkEnteredRaffles = async () => {
+      if (!address || raffles.length === 0) {
+        setEnteredRaffles([]);
+        setIsCheckingEnteredRaffles(false);
+        return;
+      }
+
+      setIsCheckingEnteredRaffles(true);
+      try {
+        // Check tickets for all raffles in parallel
+        const ticketCounts = await Promise.all(
+          raffles.map((raffle) => getTicketCount(raffle.id, address))
+        );
+
+        // Filter raffles where user has at least one ticket
+        const entered = raffles.filter((_, index) => ticketCounts[index] > 0);
+        setEnteredRaffles(entered);
+      } catch (error) {
+        console.error("Failed to check entered raffles:", error);
+        setEnteredRaffles([]);
+      } finally {
+        setIsCheckingEnteredRaffles(false);
+      }
+    };
+
+    void checkEnteredRaffles();
+  }, [raffles, address, getTicketCount]);
+
+  // Filter entered raffles by category
+  const filteredEnteredRaffles = useMemo(() => {
+    if (selectedCategory === "All") return enteredRaffles;
+    return enteredRaffles.filter(
+      (raffle) => raffle.category === selectedCategory
+    );
+  }, [enteredRaffles, selectedCategory]);
+
+  // Filter created raffles by category is already handled in createdRaffles useMemo above
 
   const handleRaffleUpdate = useCallback(() => {
     handleLoadRaffles();
@@ -320,7 +352,7 @@ export default function Home() {
                 </p>
                 <WalletConnect />
               </div>
-            ) : isLoading ? (
+            ) : isLoading || isCheckingEnteredRaffles ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <RaffleCardSkeleton key={i} />
@@ -333,15 +365,17 @@ export default function Home() {
                     <Sparkles className="h-6 w-6 text-secondary" />
                     Raffles I Entered
                   </h3>
-                  {enteredRaffles.length === 0 ? (
+                  {filteredEnteredRaffles.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
                       <p className="text-muted-foreground">
-                        You haven't entered any raffles yet
+                        {enteredRaffles.length === 0
+                          ? "You haven't entered any raffles yet"
+                          : `No raffles found in "${selectedCategory}" category`}
                       </p>
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {enteredRaffles.map((raffle) => (
+                      {filteredEnteredRaffles.map((raffle) => (
                         <RaffleCard
                           key={raffle.id}
                           raffle={raffle}
@@ -360,9 +394,13 @@ export default function Home() {
                   {createdRaffles.length === 0 ? (
                     <div className="glass-strong glow-border rounded-3xl p-12 text-center">
                       <p className="text-muted-foreground mb-6">
-                        You haven't created any raffles yet
+                        {selectedCategory === "All"
+                          ? "You haven't created any raffles yet"
+                          : `No raffles found in "${selectedCategory}" category`}
                       </p>
-                      <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
+                      {selectedCategory === "All" && (
+                        <CreateRaffleDialog onSuccess={handleRaffleUpdate} />
+                      )}
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

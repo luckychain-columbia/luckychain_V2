@@ -1,0 +1,43 @@
+# ⚠️ IMPORTANT: Why Raffle 0 Keeps Failing
+
+The error means Hardhat rejected the transaction because it WOULD FAIL.
+
+## You're Still Using Raffle 0 From Old Session!
+
+Raffle 0 was created BEFORE you restarted Hardhat node.
+Even if you redeployed the contract, Raffle 0's data is still there but corrupted.
+
+## The Fix: Restart Hardhat Node (This Clears ALL Raffles)
+
+### Step 1: STOP Hardhat Node
+
+In Terminal 1, press Ctrl+C to stop Hardhat node.
+
+This is KEY - restarting Hardhat node clears the entire blockchain!
+
+### Step 2: Restart Everything Fresh
+
+Terminal 1 (NEW Hardhat session):
+cd /Users/alaradinc/Downloads/luckychain_Dec_2_2025/luckychain_V2/LuckyChain_V2/contract
+npx hardhat node
+
+Terminal 2 (Deploy):
+cd /Users/alaradinc/Downloads/luckychain_Dec_2_2025/luckychain_V2/LuckyChain_V2/contract
+npm run deploy -- --network localhost
+
+Terminal 3 (Frontend):
+cd /Users/alaradinc/Downloads/luckychain_Dec_2_2025/luckychain_V2/LuckyChain_V2
+rm -rf .next node_modules/.cache
+npm run dev
+
+### Step 3: Create NEW Raffle
+
+After restarting Hardhat:
+- Raffle 0 will be GONE
+- You'll need to create a NEW raffle
+- That NEW raffle will work! ✅
+
+## Don't Try to Fix Raffle 0 - It's Corrupted!
+
+The solution is to START FRESH by restarting Hardhat node.
+

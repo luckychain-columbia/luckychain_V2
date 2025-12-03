@@ -126,16 +126,16 @@ export const RaffleCard = memo(function RaffleCard({
     const canFinalize =
       !raffle.isCompleted &&
       participants.length > 0 &&
-      (hasEnded || (maxTicketsReached && isCreator));
+      (hasEnded || maxTicketsReached);
     const poolEth = Math.max(
       0,
       Number(formatEther(raffle.totalPool ?? BigInt(0)))
     );
     const rewardFromPool = (poolEth * 0.1) / 100; // 0.1% of pool
-    const calculatedReward = rewardFromPool > 0.001 ? rewardFromPool : 0.001;
+    const calculatedReward = rewardFromPool > 0.005 ? rewardFromPool : 0.005;
     const finalizationRewardEth = Math.min(
       0.01,
-      Math.max(0.001, calculatedReward)
+      Math.max(0.005, calculatedReward)
     );
     const actualReward = Math.min(finalizationRewardEth, poolEth);
     const progress =
@@ -176,7 +176,6 @@ export const RaffleCard = memo(function RaffleCard({
     raffle.creatorPct,
     raffle.numWinners,
     hasEnded,
-    isCreator,
   ]);
 
   const {
@@ -366,17 +365,6 @@ export const RaffleCard = memo(function RaffleCard({
       return;
     }
 
-    // Check authorization based on raffle state
-    if (!hasEnded && maxTicketsReached && !isCreator) {
-      toast({
-        title: "Unauthorized",
-        description:
-          "Only the raffle creator can finalize early when max tickets are reached",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       await selectWinner(raffle.id);
@@ -406,9 +394,6 @@ export const RaffleCard = memo(function RaffleCard({
     isLoading,
     account,
     participants.length,
-    hasEnded,
-    maxTicketsReached,
-    isCreator,
     raffle.id,
     selectWinner,
     loadParticipants,
@@ -494,6 +479,7 @@ export const RaffleCard = memo(function RaffleCard({
                 <h3 className="text-2xl font-semibold tracking-tight text-foreground truncate group-hover/title:text-primary transition-colors">
                   {raffle.title}
                 </h3>
+                <span className="text-xs text-muted-foreground font-mono">#{raffle.id}</span>
                 <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0" />
               </div>
             </Link>
@@ -752,10 +738,8 @@ export const RaffleCard = memo(function RaffleCard({
                     4
                   )} ETH from the pool (covers gas).`
                 : maxTicketsReached
-                ? isCreator
-                  ? "All tickets sold. Click to select winners and distribute prizes."
-                  : "All tickets sold. Only creator can finalize early."
-                : "Click to select winners and distribute prizes."}
+                ? `All tickets sold. Finalizing rewards you ${actualReward.toFixed(4)} ETH from the pool (covers gas).`
+                : `Click to finalize and receive ${actualReward.toFixed(4)} ETH reward from the pool (covers gas).`}
             </span>
           </div>
         </div>

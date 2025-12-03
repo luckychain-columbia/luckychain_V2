@@ -354,7 +354,7 @@ export default function FYIPage() {
                       </p>
                       <ul className="text-sm ml-5 list-disc space-y-1">
                         <li>
-                          <strong>Reward Amount:</strong> 0.001-0.01 ETH (or
+                          <strong>Reward Amount:</strong> 0.005-0.01 ETH (or
                           0.1% of pool, whichever is higher, capped at 0.01 ETH)
                         </li>
                         <li>
@@ -375,7 +375,7 @@ export default function FYIPage() {
                       <p className="text-sm mt-2">
                         <strong>Example:</strong> If a raffle has 1 ETH in the
                         pool, the finalizer receives 0.001 ETH (0.1% of pool,
-                        but minimum 0.001 ETH), which covers their gas costs.
+                        but minimum 0.005 ETH), which covers their gas costs.
                         The remaining 0.999 ETH is distributed to winners and
                         the creator.
                       </p>
@@ -508,7 +508,7 @@ export default function FYIPage() {
                     <p>
                       <strong>Finalization Reward System:</strong> When you
                       finalize an expired raffle, the pool automatically pays
-                      you a reward (0.001-0.01 ETH) that covers your gas costs.
+                      you a reward (0.005-0.01 ETH) that covers your gas costs.
                       This reward comes from the raffle pool, so participants
                       effectively pay for finalization, not you.
                     </p>
@@ -646,7 +646,7 @@ export default function FYIPage() {
                         </li>
                         <li>
                           <strong>Finalization Reward (if expired):</strong>{" "}
-                          0.001 ETH
+                          0.005 ETH (minimum)
                         </li>
                         <li>
                           <strong>Prize Pool:</strong> 1.424 ETH (distributed to
@@ -778,7 +778,7 @@ export default function FYIPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground space-y-2 px-6 pb-6 pt-2">
                     <p>
-                      The finalization reward (0.001-0.01 ETH) is paid to
+                      The finalization reward (0.005-0.01 ETH) is paid to
                       whoever finalizes an expired raffle. This reward comes
                       from the raffle pool and is designed to cover gas costs
                       and incentivize finalization.
@@ -787,12 +787,12 @@ export default function FYIPage() {
                       <strong>Reward Calculation:</strong>
                     </p>
                     <ul className="ml-6 list-disc space-y-1">
-                      <li>Minimum: 0.001 ETH (covers typical gas costs)</li>
+                      <li>Minimum: 0.005 ETH (covers typical gas costs)</li>
                       <li>Maximum: 0.01 ETH (prevents excessive pool drain)</li>
                       <li>
                         Formula:{" "}
                         <code className="bg-muted px-1 rounded">
-                          min(max(0.1% of pool, 0.001 ETH), 0.01 ETH)
+                          min(max(0.1% of pool, 0.005 ETH), 0.01 ETH)
                         </code>
                       </li>
                       <li>
@@ -912,7 +912,7 @@ export default function FYIPage() {
                       </li>
                       <li>
                         <strong>Reward incentive:</strong> The finalizer
-                        receives a reward (0.001-0.01 ETH) from the pool, which
+                        receives a reward (0.005-0.01 ETH) from the pool, which
                         covers gas costs and provides a small incentive
                       </li>
                       <li>

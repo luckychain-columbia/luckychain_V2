@@ -731,10 +731,10 @@ export default function DevelopersPage() {
                           the finalizer:
                         </p>
                         <code className="block bg-muted p-4 rounded-lg text-sm font-mono mb-3">
-                          {`reward = min(max(0.1% of pool, 0.001 ETH), 0.01 ETH)`}
+                          {`reward = min(max(0.1% of pool, 0.005 ETH), 0.01 ETH)`}
                         </code>
                         <ul className="space-y-2 text-sm text-muted-foreground ml-6 list-disc">
-                          <li>Minimum: 0.001 ETH (covers typical gas costs)</li>
+                          <li>Minimum: 0.005 ETH (covers typical gas costs)</li>
                           <li>
                             Maximum: 0.01 ETH (prevents excessive pool drain)
                           </li>
@@ -760,7 +760,7 @@ export default function DevelopersPage() {
                           <li>
                             <strong>Finalization reward:</strong>{" "}
                             <code className="bg-muted px-1.5 py-0.5 rounded">
-                              min(max(0.1% of pool, 0.001 ETH), 0.01 ETH)
+                              min(max(0.1% of pool, 0.005 ETH), 0.01 ETH)
                             </code>{" "}
                             (only for expired lotteries)
                           </li>
@@ -793,10 +793,10 @@ export default function DevelopersPage() {
                         <p className="text-muted-foreground mt-3 text-sm">
                           <strong>Example:</strong> If a raffle has a pool of 10
                           ETH, creator fee of 5%, 2 winners, and is expired
-                          (finalization reward = 0.001 ETH):
+                          (finalization reward = 0.005 ETH):
                         </p>
                         <ul className="text-sm text-muted-foreground ml-6 list-disc mt-2">
-                          <li>Finalization reward: 0.001 ETH</li>
+                          <li>Finalization reward: 0.005 ETH</li>
                           <li>Creator reward: 0.5 ETH</li>
                           <li>Prize pool: 9.499 ETH</li>
                           <li>Prize per winner: 4.749 ETH</li>
