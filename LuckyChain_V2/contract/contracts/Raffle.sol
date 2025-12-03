@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
+import "hardhat/console.sol";
 
 contract Raffle {
     struct RaffleInfo {
@@ -27,6 +28,10 @@ contract Raffle {
     mapping(uint256 => address[]) private raffleParticipants;
     mapping(uint256 => address[]) private raffleWinners;
     mapping(uint256 => mapping(address => uint256[])) private userTickets;
+
+    //to track raffles player entered
+    mapping(address => uint256[]) private userRaffles;
+    mapping(uint256 => mapping(address => bool)) private userEnteredRaffle;
 
     uint256 public nextRaffleId;
 
@@ -180,6 +185,11 @@ contract Raffle {
         uint256 totalCost = raffle.ticketPrice * _ticketCount;
         require(msg.value == totalCost, "Incorrect ETH sent");
 
+        if (!userEnteredRaffle[_raffleId][msg.sender]) {
+            userEnteredRaffle[_raffleId][msg.sender] = true;
+            userRaffles[msg.sender].push(_raffleId);
+        }
+
         uint256[] memory ticketNumbers = new uint256[](_ticketCount);
         for (uint256 i = 0; i < _ticketCount; i++) {
             uint256 ticketNumber = raffleParticipants[_raffleId].length;
@@ -194,9 +204,10 @@ contract Raffle {
     }
 
     // Anyone can finalize an expired raffle, but only creator can finalize early when max tickets reached
-    function finalizeRaffle(uint256 _raffleId) external {
+    function finalizeRaffle(uint256 _raffleId) public {
         RaffleInfo storage raffle = raffles[_raffleId];
         bool isExpired = block.timestamp >= raffle.endTime;
+        console.log("finalizing raffle", block.timestamp, raffle.endTime);
 
         // If raffle has expired, anyone can finalize (with reward from pool)
         if (isExpired) {
@@ -219,11 +230,11 @@ contract Raffle {
 
     // Legacy functions for backwards compatibility
     function selectWinner(uint256 _raffleId) external {
-        this.finalizeRaffle(_raffleId);
+        finalizeRaffle(_raffleId);
     }
 
     function endRaffle(uint256 _raffleId) external {
-        this.finalizeRaffle(_raffleId);
+        finalizeRaffle(_raffleId);
     }
 
     function getRaffleInfo(
@@ -285,11 +296,64 @@ contract Raffle {
         }
     }
 
+    function getRafflesWithWinners(
+        uint256 start,
+        uint256 count
+    )
+        external
+        view
+        returns (
+            RaffleInfo[] memory infos,
+            RaffleConfig[] memory configs,
+            address[][] memory winners,
+            uint256[] memory participantCounts
+        )
+    {
+        uint256 total = nextRaffleId;
+        if (start >= total) {
+            return (
+                new RaffleInfo[](0),
+                new RaffleConfig[](0),
+                new address[][](0),
+                new uint256[](0)
+            );
+        }
+
+        uint256 end = start + count;
+        if (end > total) {
+            end = total;
+        }
+
+        uint256 length = end - start;
+
+        infos = new RaffleInfo[](length);
+        configs = new RaffleConfig[](length);
+        winners = new address[][](length);
+        participantCounts = new uint256[](length);
+
+        for (uint256 i = start; i < end; i++) {
+            uint256 localIndex = i - start;
+
+            infos[localIndex] = raffles[i];
+            configs[localIndex] = raffleSettings[i];
+            winners[localIndex] = raffleWinners[i];
+            participantCounts[localIndex] = raffleParticipants[i].length;
+        }
+    }
+
+    function getUserEnteredRaffles(
+        address user
+    ) external view returns (uint256[] memory) {
+        return userRaffles[user];
+    }
+
     function raffleCount() external view returns (uint256) {
         return nextRaffleId;
     }
 
     function _finalizeRaffle(uint256 _raffleId, bool _isExpired) internal {
+        console.log("Finalizing raffle:", _raffleId);
+
         RaffleInfo storage raffle = raffles[_raffleId];
         require(raffle.isActive, "Raffle not active");
         require(!raffle.isCompleted, "Raffle completed");
@@ -383,9 +447,15 @@ contract Raffle {
             ? prizePool % winnersCount
             : prizePool;
 
+        console.log("Start paying ....");
+
         // Pay finalization reward (if expired raffle)
-        if (finalizationReward > 0) {
-            payable(msg.sender).transfer(finalizationReward);
+        if (_isExpired) {
+            console.log("Finalization reward:", finalizationReward);
+
+            if (finalizationReward > 0) {
+                payable(msg.sender).transfer(finalizationReward);
+            }
         }
 
         // Pay creator reward
@@ -394,8 +464,11 @@ contract Raffle {
         }
 
         // Pay winners
+        console.log("Winner reward:", prizePerWinner, winnersCount);
+
         if (prizePerWinner > 0) {
             for (uint256 i = 0; i < winnersCount; i++) {
+                console.log("start paying winner:", prizePerWinner);
                 payable(winners[i]).transfer(prizePerWinner);
             }
         }

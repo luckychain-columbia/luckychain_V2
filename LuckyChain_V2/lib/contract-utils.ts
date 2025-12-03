@@ -176,11 +176,7 @@ export function invalidateRaffleCreationCache(
 }
 
 // Converts a raw Result from getLotteries() or getLottery() to plain JS
-export function normalizeLottery(
-  info: any,
-  config: any,
-  id: number
-): ContractRaffle {
+export function normalizeLottery(info: any, id: number): ContractRaffle {
   return {
     // Required UI fields -----------------------
     id,
@@ -197,16 +193,5 @@ export function normalizeLottery(
     isCompleted: Boolean(info.isCompleted ?? info[8]),
     winner: info.winner ?? info[9],
     totalPool: BigInt(info.totalPool ?? info[10] ?? 0),
-
-    // RaffleConfig ------------------------------
-    numWinners: config ? Number(config.numWinners ?? config[0]) : undefined,
-    creatorPct: config ? Number(config.creatorPct ?? config[1]) : undefined,
-    allowMultipleEntries: config
-      ? Boolean(config.allowMultipleEntries ?? config[2])
-      : undefined,
-
-    // Winners & participants --------------------
-    winners: info.winners,
-    participants: info.participants,
   };
 }

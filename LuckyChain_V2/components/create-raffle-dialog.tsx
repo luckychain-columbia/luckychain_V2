@@ -284,13 +284,16 @@ export function CreateRaffleDialog({ onSuccess }: CreateRaffleDialogProps) {
               placeholder="Categorize your raffle (it defaults to General)..."
               value={formData.category}
               onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value.slice(0, 20) })
+                setFormData({
+                  ...formData,
+                  category: e.target.value.slice(0, 20),
+                })
               }
               maxLength={20}
               className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="entryFee" className="text-white font-medium">
               Entry Fee (ETH) <span className="text-red-400">*</span>

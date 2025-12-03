@@ -6,7 +6,6 @@ import { useWeb3 } from "../app/context/Web3Context";
 import { RAFFLE_ABI } from "@/lib/contract-abi";
 import { RAFFLE_CONTRACT_ADDRESS, isWeb3Available } from "@/lib/web3";
 import { ContractRaffle } from "@/app/types";
-// import { MOCK_RAFFLES } from "../lib/mock-data";
 import { contractCache, cacheKeys } from "@/lib/contract-cache";
 import {
   extractErrorMessage,
@@ -34,8 +33,6 @@ const useContract = () => {
     };
 
     const getContract = async (withSigner = false) => {
-      console.log("Network:", await provider?.getNetwork());
-      
       if (!isWeb3Available()) {
         return null;
       }
@@ -84,14 +81,14 @@ const useContract = () => {
           return cached;
         }
 
-        const raffles =
-          (await loadRafflesBatch(contract, count).catch(() => null)) ??
-          (await loadRafflesIndividually(contract, count));
+        const raffles = await loadRafflesBatch(contract, count).catch(
+          () => null
+        );
 
         // Cache the entire list
         contractCache.set(cacheKey, raffles, contractCache.getRafflesListTTL());
 
-        return raffles.map((l: any, i: number) => normalizeLottery(l, null, i));
+        return raffles;
       } catch (error) {
         console.error("Failed to load raffles:", error);
         return [];
@@ -99,20 +96,18 @@ const useContract = () => {
     };
 
     const loadRafflesBatch = async (contract: any, count: number) => {
-      const [infos, configs] = await contract.getRaffles(0, count);
-
-      const winners = await Promise.all(
-        infos.map((_: any, i: number) => getWinners(i))
-      );
+      const [infos, configs, winners, participantCounts] =
+        await contract.getRafflesWithWinners(0, count);
 
       return infos.map((info: any, i: number) => {
         const raffle: ContractRaffle = {
-          ...info,
+          ...normalizeLottery(info, i),
           id: i,
           numWinners: Number(configs?.[i]?.numWinners ?? 1),
           creatorPct: Number(configs?.[i]?.creatorPct ?? 0),
           allowMultipleEntries: Boolean(configs?.[i]?.allowMultipleEntries),
           winners: winners[i] ?? [],
+          participantCounts: Number(participantCounts[i]) || 0,
         };
 
         contractCache.set(
@@ -125,51 +120,24 @@ const useContract = () => {
       });
     };
 
-    const loadRafflesIndividually = async (contract: any, count: number) => {
-      const promises = Array.from({ length: count }, (_, i) =>
-        loadRaffleById(contract, i)
-      );
+    const getUserParticipatedRaffleIds = async (
+      address: string
+    ): Promise<number[]> => {
+      if (!address) return [];
 
-      const results = await Promise.all(promises);
-      return results.filter((x): x is ContractRaffle => x !== null);
-    };
+      const contract = await getContract(false);
+      if (!contract) return [];
 
-    const loadRaffleById = async (
-      contract: any,
-      id: number
-    ): Promise<ContractRaffle | null> => {
       try {
-        const infoKey = cacheKeys.raffleInfo(id);
-        const cached = contractCache.get<ContractRaffle>(infoKey);
-        if (cached) return cached;
-
-        const info = await contract.getRaffleInfo(id);
-        const isCompleted = info.isCompleted ?? false;
-
-        const [config, winners] = await Promise.all([
-          contract.getRaffleConfig(id).catch(() => null),
-          getWinners(id),
-        ]);
-
-        const raffleData: ContractRaffle = {
-          ...info,
-          id: id,
-          numWinners: Number(config?.numWinners ?? 1),
-          creatorPct: Number(config?.creatorPct ?? 0),
-          allowMultipleEntries: Boolean(config?.allowMultipleEntries),
-          winners: winners || [],
-        };
-
-        contractCache.set(
-          infoKey,
-          raffleData,
-          contractCache.getRaffleTTL(isCompleted)
+        const raffleIds: bigint[] = await contract.getUserEnteredRaffles(
+          address
         );
 
-        return raffleData;
+        // Convert BigInt[] → number[]
+        return raffleIds.map((id) => Number(id));
       } catch (err) {
-        console.warn(`Failed to load raffle ${id}:`, err);
-        return null;
+        console.error("Failed to load participated raffle IDs:", err);
+        return [];
       }
     };
 
@@ -496,7 +464,9 @@ const useContract = () => {
       }
 
       try {
-        const tx = await contract.selectWinner(raffleId);
+        const tx = await contract.selectWinner(raffleId, {
+          gasLimit: BigInt(3_000_000),
+        });
 
         // Wait for transaction with timeout
         const receipt = await waitForTransaction(tx.wait());
@@ -506,75 +476,12 @@ const useContract = () => {
         // invalidateRaffle already invalidates all raffle-related caches including winners and list
         contractCache.invalidateRaffle(raffleId);
 
+        await loadRaffles();
+
         return receipt;
       } catch (err: any) {
         console.error("Error selecting winner:", err);
         throw new Error(extractErrorMessage(err, "Failed to select winner"));
-      }
-    };
-
-    const getTicketCount = async (
-      raffleId: number,
-      userAddress?: string
-    ): Promise<number> => {
-      const address = userAddress || account;
-      if (!address) return 0;
-
-      const contract = await getContract(false);
-      if (!contract) return 0;
-
-      try {
-        const tickets = await contract.getUserTickets(raffleId, address);
-        return Array.isArray(tickets) ? tickets.length : 0;
-      } catch {
-        return 0;
-      }
-    };
-
-    const getParticipants = async (raffleId: number): Promise<string[]> => {
-      const contract = await getContract(false);
-      if (!contract) return [];
-
-      // Check cache first
-      const cacheKey = cacheKeys.raffleParticipants(raffleId);
-      const ttl = contractCache.getParticipantsTTL();
-
-      try {
-        return await contractCache.getOrFetch(
-          cacheKey,
-          () => contract.getParticipants(raffleId).catch(() => []),
-          ttl
-        );
-      } catch {
-        return [];
-      }
-    };
-
-    const getWinners = async (raffleId: number): Promise<string[]> => {
-      const contract = await getContract(false);
-      if (!contract) return [];
-
-      // Check cache first
-      const cacheKey = cacheKeys.raffleWinners(raffleId);
-
-      try {
-        // Determine if raffle is completed (use cached info if available)
-        const cachedRaffle = contractCache.get<ContractRaffle>(
-          cacheKeys.raffleInfo(raffleId)
-        );
-        const isCompleted = cachedRaffle?.isCompleted === true;
-
-        const ttl = isCompleted
-          ? Infinity
-          : contractCache.getRaffleTTL(isCompleted);
-
-        return await contractCache.getOrFetch(
-          cacheKey,
-          () => contract.getWinners(raffleId).catch(() => []),
-          ttl
-        );
-      } catch {
-        return [];
       }
     };
 
@@ -583,9 +490,7 @@ const useContract = () => {
       createRaffle,
       buyTicket,
       selectWinner,
-      getTicketCount,
-      getParticipants,
-      getWinners,
+      getUserParticipatedRaffleIds,
     };
   }, [provider, account]);
 };

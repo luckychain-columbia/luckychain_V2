@@ -17,11 +17,11 @@ export interface RaffleData {
 
 export type ContractRaffle = RaffleData & {
   id: number;
-  participants?: string[];
   winners?: string[];
   numWinners?: number;
   creatorPct?: number;
   allowMultipleEntries?: boolean;
+  participantCounts?: number;
 };
 
 export interface RaffleConfig {

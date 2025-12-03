@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, memo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { WalletConnect } from "@/components/wallet-connect";
 import { RaffleCard } from "@/components/raffle-card";
 import { CreateRaffleDialog } from "@/components/create-raffle-dialog";
@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWeb3 } from "./context/Web3Context";
 import useContract from "@/hooks/use-contract";
 import { ContractRaffle } from "@/app/types";
-import Background from "@/components/background";
 
 const tabs = {
   active: {
@@ -30,12 +29,30 @@ const tabs = {
 export default function Home() {
   const [raffles, setRaffles] = useState<ContractRaffle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUserRaffle, setIsLoadingUserRaffles] = useState(true);
   const [activeTab, setActiveTab] = useState<"active" | "ended" | "my">(
     "active"
   );
   const { account: address } = useWeb3();
-  const { loadRaffles: loadRafflesFromContract } = useContract();
+  const { loadRaffles: loadRafflesFromContract, getUserParticipatedRaffleIds } =
+    useContract();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [userRaffles, setUserRaffles] = useState<number[]>([]);
+
+  const handleUserRaffles = useCallback(
+    async (acc: string) => {
+      try {
+        const data = await getUserParticipatedRaffleIds(acc);
+        setUserRaffles(data);
+      } catch (error) {
+        console.error("Failed to load user raffles:", error);
+        setUserRaffles([]);
+      } finally {
+        setIsLoadingUserRaffles(false);
+      }
+    },
+    [getUserParticipatedRaffleIds]
+  );
 
   const handleLoadRaffles = useCallback(async () => {
     try {
@@ -61,10 +78,14 @@ export default function Home() {
     // return () => clearInterval(interval);
   }, [handleLoadRaffles]);
 
-  // Get all categories currently present in the data and 
+  useEffect(() => {
+    handleUserRaffles(address || "");
+  }, [address]);
+
+  // Get all categories currently present in the data and
   // return "All" with the sorted list of unique categories
   const uniqueCategories = useMemo(() => {
-    const categories = new Set(raffles.map(r => r.category || "General"));
+    const categories = new Set(raffles.map((r) => r.category || "General"));
     return ["All", ...Array.from(categories).sort()];
   }, [raffles]);
 
@@ -73,7 +94,8 @@ export default function Home() {
   const activeRaffles = useMemo(() => {
     const nowSeconds = Math.floor(Date.now() / 1000);
     return raffles.filter((raffle) => {
-      if (selectedCategory !== "All" && raffle.category !== selectedCategory) return false;
+      if (selectedCategory !== "All" && raffle.category !== selectedCategory)
+        return false;
       if (!raffle.isActive || raffle.isCompleted) return false;
       const endTimestamp = Number(raffle.endTime ?? 0);
       return endTimestamp === 0 || endTimestamp > nowSeconds;
@@ -83,7 +105,8 @@ export default function Home() {
   const endedRaffles = useMemo(() => {
     const nowSeconds = Math.floor(Date.now() / 1000);
     return raffles.filter((raffle) => {
-      if (selectedCategory !== "All" && raffle.category !== selectedCategory) return false;
+      if (selectedCategory !== "All" && raffle.category !== selectedCategory)
+        return false;
       if (!raffle.isActive || raffle.isCompleted) return true;
       const endTimestamp = Number(raffle.endTime ?? 0);
       return endTimestamp > 0 && endTimestamp <= nowSeconds;
@@ -100,14 +123,10 @@ export default function Home() {
 
   const enteredRaffles = useMemo(() => {
     if (!address) return [];
-    const addressLower = address.toLowerCase();
-    return raffles.filter((raffle) => {
-      const participants = raffle.participants || [];
-      return participants.some(
-        (p: string) => p?.toLowerCase() === addressLower
-      );
-    });
-  }, [raffles, address]);
+    return raffles.filter((raffle) =>
+      userRaffles.some((p: number) => p === raffle.id)
+    );
+  }, [raffles, address, userRaffles]);
 
   const handleRaffleUpdate = useCallback(() => {
     handleLoadRaffles();
@@ -232,20 +251,20 @@ export default function Home() {
           </div>
 
           <div className="flex gap-2 mb-6 mt-6 overflow-x-auto pb-2">
-              {uniqueCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === cat
-                      ? "bg-purple-600 text-white"
-                      : "bg-white/10 text-gray-300 hover:bg-white/20"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            {uniqueCategories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === cat
+                    ? "bg-purple-600 text-white"
+                    : "bg-white/10 text-gray-300 hover:bg-white/20"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
           <TabsContent value="active" className="mt-0">
             {isLoading ? (
@@ -320,7 +339,7 @@ export default function Home() {
                 </p>
                 <WalletConnect />
               </div>
-            ) : isLoading ? (
+            ) : isLoading || isLoadingUserRaffle ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <RaffleCardSkeleton key={i} />
